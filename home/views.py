@@ -7,4 +7,4 @@ class TermsofServiceView(TemplateView):
     template_name = 'home/terms_of_service.html'
 
 class PrivacyPolicyView(TemplateView):
-    template_name = 'home/pricacy_policy.html'
+    template_name = 'home/privacy_policy.html'

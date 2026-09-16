@@ -3,7 +3,7 @@ from django.views.generic import TemplateView, DetailView, UpdateView
 from django.urls import reverse_lazy
 from datetime import date, timedelta
 
-class DashboardView(LoginRequiredMixin,TemplateView):
+class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/dashboard.html'
 
 class ScheduleInputView(LoginRequiredMixin, TemplateView):
