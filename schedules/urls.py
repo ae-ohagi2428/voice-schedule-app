@@ -1,0 +1,12 @@
+from django.urls import path
+from .views import DashboardView, ScheduleInputView, ScheduleEditView, TaskRunView, SettingsView
+
+app_name = 'schedules'
+
+urlpatterns = [
+    path('dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('schedule_input/', ScheduleInputView.as_view(), name='schedule_input'),
+    path('schedule_edit/', ScheduleEditView.as_view(), name='schedule_edit'),
+    path('task_run/', TaskRunView.as_view(), name='task_run'),
+    path('settings/', SettingsView.as_view(), name='settings'),
+]
