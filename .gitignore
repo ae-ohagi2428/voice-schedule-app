@@ -4,12 +4,21 @@
 
 # Python
 __pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*/*/*/__pycache__/
 *.py[cod]
+*$.py.class
+*.so
+.Python
 venv/
-.venv/
+env/
+ENV/
 
 # Django
-*.sqlite3
+*.log
+db.sqlite3
+db.sqlite3-journal
 /media/
 /staticfiles/
 
@@ -17,6 +26,15 @@ venv/
 .vscode/
 .idea/
 .DS_Store
+*.swp
+*.swo
+Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Node.js(django-tailwind用)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
