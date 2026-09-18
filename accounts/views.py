@@ -3,13 +3,12 @@ from django.contrib.auth.views import LoginView as DjangoLoginView, LogoutView a
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy
-from django.views.generic import FormView, UpdateView, TemplateView
-# from .forms import EmailAuthenticationForm, RegistrationForm
+from django.views.generic import UpdateView, CreateView
+from .forms import RegistrationForm
 
-# あとでFormViewになおす
-class RegisterView(TemplateView):
+class RegisterView(CreateView):
     template_name = 'accounts/register.html'
-    # form_class = RegistrationForm
+    form_class = RegistrationForm
     success_url = reverse_lazy('schedules:dashboard')
 
     def form_valid(self, form):
@@ -18,18 +17,15 @@ class RegisterView(TemplateView):
         messages.success(self.request, '登録が完了しました')
         return super().form_valid(form)
 
-# あとでDjangoLoginViewになおす
-class LoginView(TemplateView):
+class LoginView(DjangoLoginView):
     template_name = 'accounts/login.html'
-    # authentication_form = EmailAuthenticationForm
     redirect_authenticated_user = True
 
     def form_valid(self,form):
         messages.success(self.request, 'ログインしました')
         return super().form_valid(form)
 
-# あとでDjangoLoginViewになおす
-class LogoutView(TemplateView):
+class LogoutView(DjangoLoginView):
     next_page = reverse_lazy('accounts:login')
 
     def dispatch(self, request, *args, **kwargs):
@@ -37,8 +33,7 @@ class LogoutView(TemplateView):
             messages.success(request, 'ログアウトしました')
         return super().dispatch(request, *args, **kwargs)
 
-# あとでUpdateViewになおす
-class EmailChangeView(LoginRequiredMixin, TemplateView):
+class EmailChangeView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('schedules:settings')
     template_name = 'accounts/email_change.html'
 
@@ -46,8 +41,7 @@ class EmailChangeView(LoginRequiredMixin, TemplateView):
         messages.success(self.request, 'メールアドレスを変更しました')
         return super().form_valid(form)
 
-# あとでDjangoPasswordChangeViewになおす
-class PasswordChangeView(LoginRequiredMixin, TemplateView):
+class PasswordChangeView(LoginRequiredMixin, DjangoPasswordChangeView):
     success_url = reverse_lazy('schedules:settings')
     template_name = 'accounts/password_change.html'
 
