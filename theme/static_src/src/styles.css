@@ -1,11 +1,790 @@
 @import "tailwindcss";
-@plugin "daisyui";
-
-/**
-  * A catch-all path to Django template files, JavaScript, and Python files
-  * that contain Tailwind CSS classes and will be scanned by Tailwind to generate the final CSS file.
-  *
-  * If your final CSS file is not being updated after code changes, you may want to broaden or narrow
-  * the scope of this path.
-  */
+@config "../tailwind.config.js";
 @source "../../../**/*.{html,py,js}";
+
+/* config の backgroundImage は CSS 変数にならないので、ここで持つ */
+:root {
+  --gradient-header:      linear-gradient(135deg, #9B86C9, #C8A0C2);
+  --gradient-header-tall: linear-gradient(160deg, #9B86C9, #C8A0C2);
+  --gradient-charzone:    linear-gradient(170deg, #F3E4EE, #E9E2F7 55%, #E4EFF8);
+  --gradient-progress:    linear-gradient(90deg, #9B86C9, #C8A0C2);
+  --gradient-mic:         linear-gradient(145deg, #C8A0C2, #9B86C9);
+  --gradient-rail-now:    linear-gradient(#9B86C9, #C8A0C2);
+}
+
+@keyframes brea {
+  0%, 100% { transform: scale(1);    opacity: 0.75; }
+  50%      { transform: scale(1.06); opacity: 1; }
+}
+
+/* ============================================================
+   ベース
+   ============================================================ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-base, #FBF5FA);
+    font-family: var(--font-maru, "Zen Kaku Gothic New"), "Zen Kaku Gothic New", system-ui, sans-serif;
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    color: var(--color-body, #5B5373);
+    text-wrap: pretty;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--color-brand-link, #7E68B4);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-brand-deep, #6B5B93);
+  }
+
+  h1, h2, h3 {
+    margin: 0;
+    font-family: var(--font-maru, "Zen Maru Gothic"), system-ui, sans-serif;
+    color: var(--color-ink, #4E4666);
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+}
+
+/* ============================================================
+   部品クラス（クラス名は前回の input.css と同じ）
+   すべて素のCSS。自作クラスの @apply はしていない
+   ============================================================ */
+@layer components {
+
+  /* ---------- 画面の骨格 ---------- */
+
+  .screen {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-base, #FBF5FA);
+  }
+
+  .screen-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* スクロール領域の下端フェード */
+  .fade-bottom {
+    position: sticky;
+    bottom: 0;
+    height: 26px;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, var(--color-base, #FBF5FA));
+  }
+
+  /* ---------- ヘッダー ---------- */
+
+  .app-header {
+    background: var(--gradient-header);
+    padding-bottom: 12px;
+  }
+
+  .app-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 18px 0;
+  }
+
+  .app-title {
+    font-family: var(--font-maru, "Zen Maru Gothic"), system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
+  }
+
+  .app-title:hover {
+    color: #fff;
+  }
+
+  .header-back {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .header-btn {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 99px;
+    padding: 7px 13px;
+  }
+
+  .header-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex: none;
+  }
+
+  .header-icon-btn:hover {
+    color: #fff;
+  }
+
+  /* ログイン前の背の高い帯 */
+  .hero-header {
+    background: var(--gradient-header-tall);
+    border-radius: 0 0 34px 34px;
+    padding-bottom: 28px;
+  }
+
+  /* ---------- フッター（控えめ） ---------- */
+
+  .app-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 14px 22px 20px;
+  }
+
+  .app-footer-links {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 10px;
+    color: var(--color-faint, #A8A2B8);
+  }
+
+  .app-footer-links a {
+    color: var(--color-faint, #A8A2B8);
+  }
+
+  .app-footer-links a:hover {
+    color: var(--color-muted, #8C86A0);
+  }
+
+  .app-footer-version {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 9.5px;
+    color: var(--color-fainter, #BDB8C9);
+  }
+
+  /* ---------- ボタン ---------- */
+
+  /* .btn 単体でも使えるが、.btn-primary などは単独で完結している */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 54px;
+    padding: 0 20px;
+    border-radius: 20px;
+    font-family: var(--font-maru, "Zen Maru Gothic"), system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 14.5px;
+  }
+
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 54px;
+    padding: 0 20px;
+    border-radius: 20px;
+    background: var(--color-brand-deep, #6B5B93);
+    box-shadow: var(--shadow-btn, 0 8px 20px rgba(107, 91, 147, 0.28));
+    font-family: var(--font-maru, "Zen Maru Gothic"), system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 14.5px;
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    color: #fff;
+    background: #5F5185;
+  }
+
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    padding: 0 20px;
+    border-radius: 18px;
+    background: var(--color-surface, #FFFFFF);
+    border: 1px solid var(--color-line, #E2DAEE);
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--color-body, #5B5373);
+  }
+
+  .btn-secondary:hover {
+    color: var(--color-body, #5B5373);
+    background: #FCFAFE;
+  }
+
+  .btn-ghost {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 46px;
+    padding: 0 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.85);
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--color-body, #5B5373);
+  }
+
+  /* 丸い音声入力ボタン */
+  .btn-mic {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    background: var(--gradient-mic);
+    box-shadow: var(--shadow-mic, 0 8px 20px rgba(142, 123, 192, 0.40));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+
+  .btn-mic-sm {
+    width: 56px;
+    height: 56px;
+  }
+
+  .mic-glyph {
+    display: block;
+    width: 15px;
+    height: 22px;
+    border-radius: 99px;
+    background: #fff;
+  }
+
+  /* 地味なテキストボタン */
+  .btn-text {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--color-muted, #8C86A0);
+  }
+
+  .btn-text-danger {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 11.5px;
+    color: #B59AA8;
+  }
+
+  /* ---------- 入力欄 ---------- */
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--color-muted, #8C86A0);
+  }
+
+  .field-hint {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 10px;
+    color: var(--color-muted, #8C86A0);
+  }
+
+  .field-error {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 10.5px;
+    color: var(--color-rose-mark, #C0708F);
+  }
+
+  .input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--color-surface, #FFFFFF);
+    border: 1px solid var(--color-line, #E2DAEE);
+    border-radius: 16px;
+    padding: 14px 15px;
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 13.5px;
+    color: var(--color-body, #5B5373);
+    outline: none;
+  }
+
+  .input::placeholder {
+    color: var(--color-faint, #A8A2B8);
+  }
+
+  .input:focus {
+    border-color: var(--color-brand, #9B86C9);
+    box-shadow: 0 0 0 3px rgba(155, 134, 201, 0.22);
+  }
+
+  .checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    accent-color: var(--color-brand, #9B86C9);
+  }
+
+  /* 「または」の区切り */
+  .divider-or {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .divider-or::before,
+  .divider-or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #E7DFF3;
+  }
+
+  .divider-or > span {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 10.5px;
+    color: var(--color-faint, #A8A2B8);
+  }
+
+  /* ---------- カード・リスト ---------- */
+
+  .card {
+    background: var(--color-surface, #FFFFFF);
+    border: 1px solid rgba(91, 83, 115, 0.07);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card, 0 4px 16px rgba(91, 83, 115, 0.07));
+  }
+
+  .group-title {
+    font-family: var(--font-maru, "Zen Maru Gothic"), system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--color-muted, #8C86A0);
+    padding-left: 4px;
+  }
+
+  .list-group {
+    background: var(--color-surface, #FFFFFF);
+    border: 1px solid rgba(91, 83, 115, 0.07);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .list-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--color-hairline, #F1ECF7);
+  }
+
+  .list-row:last-child {
+    border-bottom: 0;
+  }
+
+  .list-row-label {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--color-body, #5B5373);
+  }
+
+  .list-row-value {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 12px;
+    color: var(--color-muted, #8C86A0);
+  }
+
+  /* トグル（ON） */
+  .toggle {
+    width: 44px;
+    height: 26px;
+    border-radius: 99px;
+    background: var(--color-brand, #9B86C9);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 3px;
+    box-sizing: border-box;
+    flex: none;
+  }
+
+  .toggle-knob {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  /* OFF は .toggle と併記して使う */
+  .toggle-off {
+    background: var(--color-line, #E2DAEE);
+    justify-content: flex-start;
+  }
+
+  /* ---------- タイムライン ---------- */
+
+  .tl-row {
+    display: flex;
+    gap: 11px;
+    align-items: stretch;
+  }
+
+  .tl-time {
+    width: 42px;
+    text-align: right;
+    font-family: var(--font-num, ui-monospace), Menlo, monospace;
+    font-weight: 500;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-muted, #8C86A0);
+    padding-top: 11px;
+    flex: none;
+  }
+
+  .tl-time-now {
+    font-weight: 700;
+    color: var(--color-brand-link, #7E68B4);
+    padding-top: 13px;
+  }
+
+  .tl-rail {
+    width: 3px;
+    border-radius: 2px;
+    background: #E7DFF3;
+    flex: none;
+  }
+
+  .tl-rail-now {
+    background: var(--gradient-rail-now);
+  }
+
+  .tl-item {
+    flex: 1;
+    background: var(--color-surface, #FFFFFF);
+    border: 1px solid rgba(91, 83, 115, 0.08);
+    border-radius: 14px;
+    padding: 10px 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tl-item-title {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--color-body, #5B5373);
+  }
+
+  .tl-item-dur {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 10.5px;
+    color: var(--color-muted, #8C86A0);
+  }
+
+  /* 終わったタスク（.tl-row と併記） */
+  .tl-done {
+    opacity: 0.55;
+  }
+
+  .tl-done .tl-item-title {
+    text-decoration: line-through;
+  }
+
+  /* きゅうけい（.tl-item と併記） */
+  .tl-item-rest {
+    background: var(--color-rest-bg, #E6F0F8);
+    border-color: rgba(91, 83, 115, 0.05);
+  }
+
+  .tl-item-rest .tl-item-title {
+    color: var(--color-rest-ink, #4F6478);
+  }
+
+  .tl-item-rest .tl-item-dur {
+    color: var(--color-rest-sub, #7C90A3);
+  }
+
+  /* 実行中のカード */
+  .tl-item-now {
+    flex: 1;
+    background: var(--color-surface, #FFFFFF);
+    border: 2px solid var(--color-brand-soft, #B9A6DE);
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: var(--shadow-now, 0 6px 18px rgba(142, 123, 192, 0.18));
+  }
+
+  .tl-item-now-title {
+    font-family: var(--font-maru, "Zen Maru Gothic"), system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--color-ink, #4E4666);
+  }
+
+  .badge-now {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 9.5px;
+    color: #fff;
+    background: var(--color-brand, #9B86C9);
+    border-radius: 99px;
+    padding: 3px 9px;
+  }
+
+  .remaining-sm {
+    font-family: var(--font-num, ui-monospace), Menlo, monospace;
+    font-weight: 600;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-brand-link, #7E68B4);
+  }
+
+  .progress {
+    height: 5px;
+    border-radius: 99px;
+    background: var(--color-brand-pale, #EFE9F8);
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--gradient-progress);
+  }
+
+  /* ---------- キャラクター ---------- */
+
+  .char-zone {
+    position: relative;
+    overflow: hidden;
+    border-radius: 30px;
+    background: var(--gradient-charzone);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .char-figure {
+    animation: brea 6s ease-in-out infinite;
+    object-fit: contain;
+    object-position: bottom;
+  }
+
+  .bubble {
+    background: var(--color-surface, #FFFFFF);
+    border-radius: 16px 16px 16px 4px;
+    padding: 9px 13px;
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: var(--color-body, #5B5373);
+    box-shadow: var(--shadow-bubble, 0 4px 12px rgba(91, 83, 115, 0.12));
+  }
+
+  .next-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
+    padding: 9px 12px;
+  }
+
+  .next-bar-time {
+    font-family: var(--font-num, ui-monospace), Menlo, monospace;
+    font-weight: 600;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-brand-link, #7E68B4);
+    flex: none;
+  }
+
+  .next-bar-title {
+    flex: 1;
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--color-body, #5B5373);
+  }
+
+  .next-bar-dur {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 10.5px;
+    color: var(--color-muted, #8C86A0);
+  }
+
+  /* ---------- 実行画面 ---------- */
+
+  .timer-big {
+    font-family: var(--font-num, ui-monospace), Menlo, monospace;
+    font-weight: 700;
+    font-size: 44px;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink, #4E4666);
+  }
+
+  .watching {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 11px;
+    color: var(--color-muted, #8C86A0);
+  }
+
+  .watching-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-brand, #9B86C9);
+    animation: brea 2.4s ease-in-out infinite;
+  }
+
+  /* ---------- 編集画面の変更マーク ---------- */
+
+  .time-was {
+    font-family: var(--font-num, ui-monospace), Menlo, monospace;
+    font-weight: 600;
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    color: #B3ADC0;
+    text-decoration: line-through;
+  }
+
+  .time-new {
+    font-family: var(--font-num, ui-monospace), Menlo, monospace;
+    font-weight: 700;
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-rose-mark, #C0708F);
+  }
+
+  /* るるるからの確認シート（まとめてずらす？） */
+  .confirm-sheet {
+    background: var(--color-rose-pale, #F3E4EE);
+    border-radius: 26px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ---------- ページ見出し ---------- */
+
+  .page-title {
+    font-family: var(--font-maru, "Zen Maru Gothic"), system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--color-ink, #4E4666);
+  }
+
+  .page-sub {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 11px;
+    color: var(--color-muted, #8C86A0);
+  }
+
+  .link-action {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--color-brand-link, #7E68B4);
+  }
+
+  /* ---------- 規約・プライバシー本文 ---------- */
+
+  .doc-card {
+    background: var(--color-surface, #FFFFFF);
+    border: 1px solid rgba(91, 83, 115, 0.07);
+    border-radius: 22px;
+    padding: 18px 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .doc-h {
+    font-family: var(--font-maru, "Zen Maru Gothic"), system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--color-ink, #4E4666);
+  }
+
+  .doc-p {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 11.5px;
+    line-height: 1.95;
+    color: var(--color-body, #5B5373);
+  }
+
+  .doc-date {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-size: 10.5px;
+    color: var(--color-faint, #A8A2B8);
+  }
+
+  /* タブ（利用規約／プライバシー） */
+  .tab {
+    font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    color: var(--color-muted, #8C86A0);
+    background: var(--color-surface, #FFFFFF);
+    border: 1px solid var(--color-line, #E2DAEE);
+    border-radius: 99px;
+    padding: 7px 14px;
+  }
+
+  .tab-active {
+    color: #fff;
+    background: var(--color-brand, #9B86C9);
+    border-color: transparent;
+  }
+
+  /* 等幅の数字 */
+  .num {
+    font-family: var(--font-num, ui-monospace), Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}

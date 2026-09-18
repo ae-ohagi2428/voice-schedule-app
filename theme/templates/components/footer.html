@@ -1,0 +1,6 @@
+<footer class="app-footer">
+  <nav class="app-footer-links">
+    <a href="{% url 'home:terms_of_service' %}">利用規約</a><span>・</span><a href="{% url 'home:privacy_policy' %}">プライバシーポリシー</a>{% if show_contact %}<span>・</span><a href="{% url 'contact' %}">お問い合わせ</a>{% endif %}
+  </nav>
+  <div class="app-footer-version">ver {{ app_version|default:"1.0.0" }}</div>
+</footer>

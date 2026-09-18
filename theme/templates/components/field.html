@@ -1,0 +1,31 @@
+{% comment %}
+  {% include "components/field.html" with field=form.email label="メールアドレス" %}
+  フォームを使わない場合: with name="email" value="..." input_type="email"
+{% endcomment %}
+<div class="field">
+  <label class="field-label" for="{% if field %}{{ field.id_for_label }}{% else %}{{ name }}{% endif %}">
+    {{ label|default:field.label }}
+  </label>
+
+  {% if field %}
+    <input class="input"
+           type="{{ input_type|default:'text' }}"
+           name="{{ field.name }}"
+           id="{{ field.id_for_label }}"
+           value="{{ field.value|default_if_none:'' }}"
+           placeholder="{{ placeholder|default:'' }}"
+           {% if field.field.required %}required{% endif %}>
+    {% if field.errors %}
+      <span class="font-kaku text-[10.5px] text-rose-mark">{{ field.errors.0 }}</span>
+    {% endif %}
+  {% else %}
+    <input class="input"
+           type="{{ input_type|default:'text' }}"
+           name="{{ name }}"
+           id="{{ name }}"
+           value="{{ value|default:'' }}"
+           placeholder="{{ placeholder|default:'' }}">
+  {% endif %}
+
+  {% if hint %}<span class="font-kaku text-[10px] text-muted">{{ hint }}</span>{% endif %}
+</div>
