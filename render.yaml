@@ -1,8 +1,8 @@
 databases:
   - name: voice-schedule-app-db
     plan: free
-    databaseName: voice-schedule-app
-    user: voice-schedule-app
+    databaseName: voice_schedule_app
+    user: voice_schedule_app
 
 services:
   - type: web
