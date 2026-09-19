@@ -12,10 +12,10 @@ class RegisterView(CreateView):
     success_url = reverse_lazy('schedules:dashboard')
 
     def form_valid(self, form):
-        user = form.save()
-        login(self.request, user)
+        response = super().form_valid(form)
+        login(self.request, self.object)
         messages.success(self.request, '登録が完了しました')
-        return super().form_valid(form)
+        return response
 
 class LoginView(DjangoLoginView):
     template_name = 'accounts/login.html'
@@ -25,7 +25,7 @@ class LoginView(DjangoLoginView):
         messages.success(self.request, 'ログインしました')
         return super().form_valid(form)
 
-class LogoutView(DjangoLoginView):
+class LogoutView(DjangoLogoutView):
     next_page = reverse_lazy('accounts:login')
 
     def dispatch(self, request, *args, **kwargs):

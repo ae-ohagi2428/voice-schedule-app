@@ -6,7 +6,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#9B86C9">
-<title>{% block title %}アプリ名{% endblock %}</title>
+<title>{% block title %}とき★よみ{% endblock %}</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,12 +17,24 @@
 {% block head_extra %}{% endblock %}
 </head>
 
-<body>
-<div class="screen">
+<body class="py-6">
+<div class="min-h-[calc(100vh-3rem)] max-w-[430px] mx-auto bg-base
+              rounded-[28px] overflow-hidden
+              shadow-[0_12px_50px_-10px_rgba(91,83,115,0.8)]
+              ring-1 ring-white/60">
 
   {% block header %}
     {% include "components/header.html" %}
   {% endblock %}
+{% if messages %}
+  <div data-auto-dismiss class="px-[22px] pt-4 flex flex-col gap-2 transition-opacity duration-500">
+    {% for message in messages %}
+      <p class="rounded-[16px] bg-[#EFE9F8] px-4 py-3 text-[12.5px] text-[#6B5B93]">{{ message }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+
 
   {% block body %}
   <main class="screen-body">
@@ -35,6 +47,16 @@
   {% endblock %}
 
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-auto-dismiss]').forEach((el) => {
+      setTimeout(() => {
+        el.classList.add('opacity-0');
+        el.addEventListener('transitionend', () => el.remove(), { once: true });
+      }, 3500);
+    });
+  });
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
