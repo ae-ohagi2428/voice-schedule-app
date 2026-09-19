@@ -1,0 +1,29 @@
+{% comment %}
+タイムラインの1行。
+  {% include "components/task_row.html" with task=task %}
+task に期待する属性:
+  start_time（"9:00"）/ title / duration_min / state（"done" / "now" / "rest" / 既定）
+  now の場合のみ: remaining（"23:40"）/ progress_pct（47）/ end_time
+{% endcomment %}
+<div class="tl-row {% if task.state == 'done' %}tl-done{% endif %}">
+
+  <div class="tl-time {% if task.state == 'now' %}tl-time-now{% endif %}">{{ task.start_time }}</div>
+  <div class="tl-rail {% if task.state == 'now' %}tl-rail-now{% endif %}"></div>
+
+  {% if task.state == 'now' %}
+    <div class="tl-item-now">
+      <div class="flex justify-between items-center">
+        <span class="badge-now">いま</span>
+        <span class="font-num font-semibold text-[11.5px] text-brand-link">のこり {{ task.remaining }}</span>
+      </div>
+      <div class="font-maru font-bold text-[15px] text-ink">{{ task.title }}</div>
+      <div class="progress"><div class="progress-bar" style="width: {{ task.progress_pct }}%"></div></div>
+    </div>
+  {% else %}
+    <div class="tl-item {% if task.state == 'rest' %}tl-item-rest{% endif %}">
+      <span class="tl-item-title">{{ task.title }}</span>
+      <span class="tl-item-dur">{{ task.duration_min }}分</span>
+    </div>
+  {% endif %}
+
+</div>

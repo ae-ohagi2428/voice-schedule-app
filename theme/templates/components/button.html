@@ -1,0 +1,12 @@
+{% comment %}
+  {% include "components/button.html" with label="ログイン" type="submit" %}
+  {% include "components/button.html" with label="Googleでつづける" variant="secondary" url=google_url %}
+  variant: primary（既定）/ secondary / ghost
+{% endcomment %}
+{% with cls="btn-"|add:variant|default:"btn-primary" %}
+  {% if url %}
+    <a href="{{ url }}" class="{% if variant %}btn-{{ variant }}{% else %}btn-primary{% endif %} {{ extra_class }}">{{ label }}</a>
+  {% else %}
+    <button type="{{ type|default:'button' }}" class="{% if variant %}btn-{{ variant }}{% else %}btn-primary{% endif %} {{ extra_class }}">{{ label }}</button>
+  {% endif %}
+{% endwith %}
