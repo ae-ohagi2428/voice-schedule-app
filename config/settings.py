@@ -14,7 +14,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = 'RENDER' not in os.environ
 
-ALLOWED_HOSTS = ['']
+ALLOWED_HOSTS = []
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
