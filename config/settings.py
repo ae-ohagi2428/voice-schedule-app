@@ -42,7 +42,6 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'accounts.User'
 
 LOGIN_REDIRECT_URL = 'schedules:dashboard'
-LOGOUT_REDIRECT_URL = 'accounts:login'
 LOGIN_URL = 'accounts:login'
 
 MIDDLEWARE = [

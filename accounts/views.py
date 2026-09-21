@@ -29,10 +29,10 @@ class LoginView(DjangoLoginView):
 class LogoutView(DjangoLogoutView):
     next_page = reverse_lazy('accounts:login')
 
-    def dispatch(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             messages.success(request, 'ログアウトしました')
-        return super().dispatch(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
 
 class EmailChangeView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('schedules:settings')
