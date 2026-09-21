@@ -29,7 +29,7 @@
   {% if messages %}
     <div data-auto-dismiss class="fixed top-4 left-1/2 -translate-x-1/2 w-[calc(100%-44px)] max-w-[240px] z-50 flex flex-col gap-2 transition-opacity duration-500">
       {% for message in messages %}
-        <p class="rounded-[16px] px-4 py-3 text-[12.5px] shadow-[0_6px_18px_rgba(91,83,115,0.15)]
+        <p class="text-center rounded-[16px] px-4 py-3 text-[12.5px] shadow-[0_6px_18px_rgba(91,83,115,0.15)]
           {% if message.tags == 'error' %}bg-[#F3E4EE] text-[#C0708F]{% else %}bg-[#EFE9F8] text-[#6B5B93]{% endif %}">
           {{ message }}
         </p>

@@ -1,7 +1,33 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}ダッシュボード{% endblock %}
+{% block title %}ダッシュボード - ときよみ★{% endblock %}
 
 {% block content %}
-<h1>ダッシュボード</h1>
+<div class="px-[18px] pt-4 flex items-end justify-between">
+  <div class="flex flex-col gap-1">
+    <h1 class="page-title">きょうの計画</h1>
+    <p class="page-sub">{{ today|date:"n月j日（D）" }}・まだ予定がありません</p>
+  </div>
+</div>
+
+<div class="char-zone mx-3 mt-4 mb-3 h-[380px]">
+  <div class="next-bar absolute top-[14px] left-[14px] right-[14px] z-10">
+    <span class="next-bar-time">つぎ</span>
+    <span class="next-bar-title">まだ予定がありません</span>
+  </div>
+
+  <div class="bubble absolute top-[62px] left-4 z-10 max-w-[190px]">
+      ＋ボタンから予定を追加してみよう！
+  </div>
+
+  <image src="{% static 'images/character_studying.png' %}" alt="るるる"
+    class="char-figure w-[300px] h-[300px] -translate-x-6">
+
+  <a href="{% url 'schedules:input' %}" class="btn-mic btn-mic-sm absolute right-[14px] bottom-4 z-10" aria-label="予定を追加">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round">
+    <path d="M12 5v14M5 12h14"/>
+  </svg>
+</a>
+</div>
 {% endblock %}
