@@ -356,7 +356,17 @@
     border-color: var(--color-brand, #9B86C9);
     box-shadow: 0 0 0 3px rgba(155, 134, 201, 0.22);
   }
+  .input:-webkit-autofill,
+  .input:-webkit-autofill:hover {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface, #FFFFFF) inset;
+    -webkit-text-fill-color: var(--color-body, #5B5373);
+  }
 
+  .input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface, #FFFFFF) inset,
+                        0 0 0 3px rgba(155, 134, 201, 0.22);
+    border-color: var(--color-brand, #9B86C9);
+  }
   .checkbox {
     width: 18px;
     height: 18px;

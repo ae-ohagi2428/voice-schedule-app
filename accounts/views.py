@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import UpdateView, CreateView
-from .forms import RegistrationForm
+from .forms import RegistrationForm, LoginForm
 
 class RegisterView(CreateView):
     template_name = 'accounts/register.html'
@@ -19,6 +19,7 @@ class RegisterView(CreateView):
 
 class LoginView(DjangoLoginView):
     template_name = 'accounts/login.html'
+    form_class = LoginForm
     redirect_authenticated_user = True
 
     def form_valid(self,form):
