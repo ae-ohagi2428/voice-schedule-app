@@ -1,15 +1,27 @@
 {% load static %}
 <header class="hero-header">
-  {% if show_buttons %} 
-    <div class="flex justify-end px-[18px] pt-2 gap-2">
-      <a href="{% url 'accounts:login' %}" class="header-btn">ログイン</a>
-      <a href="{% url 'accounts:register' %}" class="header-btn">新規登録</a>
+    <div class="flex justify-between px-[18px] pt-2">
+      {% if user.is_authenticated %}
+        <a href="{% url 'schedules:dashboard' %}" class="header-icon-btn" aria-label="ホーム">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+        </a>
+      {% else %}
+        <a href="{% url 'home:index' %}" class="header-icon-btn" aria-label="ホーム">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+        </a>
+      {% endif %}
+
+      <div class="flex items-center gap-2">
+        <a href="{% url 'accounts:login' %}" class="header-btn">ログイン</a>
+        <a href="{% url 'accounts:register' %}" class="header-btn">新規登録</a>
+      </div>
     </div>
-  {% endif %}
   <div class="flex flex-col items-center gap-2.5 px-6 pt-4">
     <img src="{% static 'images/character.png' %}" alt=""
-        class="w-[100px] h-[100px] rounded-full object-cover bg-white">
-    <div class="font-maru font-bold text-[21px] text-white">とき★よみ</div>
-    <div class="font-kaku text-[11.5px] text-white/90">楽しい時間をすごす魔法。</div>
+        class="w-[140px] h-[140px] rounded-full object-cover bg-white">
+    <div class="font-maru font-bold text-[36px] text-white">
+      <a href="{% url 'home:index' %}" class="text-inherit hover:text-inherit">ときよみ★</a>
+    </div>
+    <div class="font-kaku text-[16px] text-white/90">楽しい時間をすごす魔法。</div>
   </div>
 </header>

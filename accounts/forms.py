@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import BaseUserCreationForm
+from django.contrib.auth.forms import BaseUserCreationForm, AuthenticationForm
 
 User = get_user_model()
 
@@ -23,3 +23,9 @@ class RegistrationForm(BaseUserCreationForm):
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError('このメールアドレスは既に登録されています。')
         return email
+
+class LoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'input'
