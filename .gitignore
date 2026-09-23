@@ -37,4 +37,7 @@ Thumbs.db
 node_modules/
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*theme/static/css/dist/
+yarn-error.log*
+
+# ビルド生成物（Tailwindが自動生成）
+theme/static/css/dist/
