@@ -30,7 +30,7 @@ class Schedule(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(start_at__gt=models.F("start_at")),
+                condition=models.Q(end_at__gt=models.F("start_at")),
                 name="end_at_after_start_at",                
             )
         ]
