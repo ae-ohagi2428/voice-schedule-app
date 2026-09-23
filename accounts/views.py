@@ -1,10 +1,14 @@
-from django.contrib.auth import login
-from django.contrib.auth.views import LoginView as DjangoLoginView, LogoutView as DjangoLogoutView, PasswordChangeView as DjangoPasswordChangeView
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.contrib.auth import login
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView as DjangoLoginView
+from django.contrib.auth.views import LogoutView as DjangoLogoutView
+from django.contrib.auth.views import PasswordChangeView as DjangoPasswordChangeView
 from django.urls import reverse_lazy
-from django.views.generic import UpdateView, CreateView
-from .forms import RegistrationForm, LoginForm
+from django.views.generic import CreateView, UpdateView
+
+from .forms import LoginForm, RegistrationForm
+
 
 class RegisterView(CreateView):
     template_name = 'accounts/register.html'

@@ -1,8 +1,8 @@
-from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import TemplateView, DetailView, UpdateView
 from django.utils import timezone
+from django.views.generic import TemplateView, UpdateView
+
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/dashboard.html'

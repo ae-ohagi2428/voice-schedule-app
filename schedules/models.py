@@ -1,5 +1,6 @@
-from django.db import models
+
 from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 
@@ -61,6 +62,8 @@ class Setting(models.Model):
         default=AlertInterval.FIFTEEN,
         verbose_name="お知らせ間隔（分）"    
     )
+    def __str__(self):
+        return f"{self.user} の設定"
 
 class ApiUsage(models.Model):
     user = models.OneToOneField(
@@ -75,3 +78,5 @@ class ApiUsage(models.Model):
         default=0,
         verbose_name="本日の使用回数"
     )
+    def __str__(self):
+        return f"{self.user} の利用状況（{self.last_used_on}: {self.count}回）"

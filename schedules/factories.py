@@ -2,8 +2,11 @@ from datetime import timedelta
 
 import factory
 from django.utils import timezone
+
 from accounts.factories import UserFactory
+
 from .models import Schedule
+
 
 class ScheduleFactory(factory.django.DjangoModelFactory):
     class Meta:

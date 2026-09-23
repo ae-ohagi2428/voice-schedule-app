@@ -1,5 +1,13 @@
 from django.urls import path
-from .views import DashboardView, ScheduleInputView, ScheduleEditView, ScheduleUpdateView, TaskRunView, SettingsView
+
+from .views import (
+    DashboardView,
+    ScheduleEditView,
+    ScheduleInputView,
+    ScheduleUpdateView,
+    SettingsView,
+    TaskRunView,
+)
 
 app_name = 'schedules'
 
