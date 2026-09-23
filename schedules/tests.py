@@ -1,5 +1,7 @@
 from django.test import TestCase
+
 from .factories import ScheduleFactory
+
 
 class ScheduleFactoryTest(TestCase):
     def test_create_schedule(self):

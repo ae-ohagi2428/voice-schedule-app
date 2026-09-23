@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import HomeView, TermsofServiceView, PrivacyPolicyView
+
+from .views import HomeView, PrivacyPolicyView, TermsofServiceView
 
 app_name = 'home'
 

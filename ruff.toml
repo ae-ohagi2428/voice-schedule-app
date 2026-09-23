@@ -1,0 +1,7 @@
+target-version = "py312"
+line-length = 100
+extend-exclude = ["*/migrations/*", "theme/static_src", "htmlcov"]
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "DJ"]
+ignore = ["E501"]

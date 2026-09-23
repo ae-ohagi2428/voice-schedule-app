@@ -9,3 +9,4 @@ psycopg2-binary>=2.9.9
 python-dotenv
 factory-boy>=3.3, <4
 coverage>=7.6,<8
+ruff>=0.6, <1
