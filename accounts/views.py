@@ -7,6 +7,8 @@ from django.contrib.auth.views import PasswordChangeView as DjangoPasswordChange
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
 
+from schedules.models import Setting
+
 from .forms import LoginForm, RegistrationForm
 
 
@@ -17,9 +19,12 @@ class RegisterView(CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        Setting.objects.create(user=self.object)
         login(self.request, self.object)
         messages.success(self.request, '登録が完了しました')
         return response
+
+    
 
 class LoginView(DjangoLoginView):
     template_name = 'accounts/login.html'
