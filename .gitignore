@@ -41,3 +41,7 @@ yarn-error.log*
 
 # ビルド生成物（Tailwindが自動生成）
 theme/static/css/dist/
+
+# カバレッジ
+.coverage
+htmlcov/
