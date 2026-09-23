@@ -13,7 +13,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 class ScheduleInputView(LoginRequiredMixin, TemplateView):
-    template_name = 'schedules/schedule_input.html'
+    template_name = 'schedules/input.html'
 
 class ScheduleEditView(LoginRequiredMixin, UpdateView):
     template_name = 'schedules/schedule_edit.html'
