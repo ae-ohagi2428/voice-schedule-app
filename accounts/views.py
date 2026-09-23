@@ -1,4 +1,3 @@
-from schedules.models import Setting
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -7,6 +6,8 @@ from django.contrib.auth.views import LogoutView as DjangoLogoutView
 from django.contrib.auth.views import PasswordChangeView as DjangoPasswordChangeView
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
+
+from schedules.models import Setting
 
 from .forms import LoginForm, RegistrationForm
 
