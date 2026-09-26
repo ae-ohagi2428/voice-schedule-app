@@ -1,6 +1,9 @@
+import json
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 from django.utils import timezone
+from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
 
@@ -13,8 +16,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 class ScheduleInputView(LoginRequiredMixin, TemplateView):
-    template_name = 'schedules/schedule_input.html'
+    template_name = 'schedules/input.html'
 
+class TranscriptView(LoginRequiredMixin, View):
+    def post(self, request):
+        data = json.loads(request.body)
+        text = data.get('text', '')
+        return JsonResponse({'text': text})
+    
 class ScheduleEditView(LoginRequiredMixin, UpdateView):
     template_name = 'schedules/schedule_edit.html'
 

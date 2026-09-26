@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}予定入力ページ{% endblock %}
+
+{% block content %}
+<h1>予定入力ページ</h1>
+<div class="px-[22px] pt-6 flex flex-col gap-4">
+    <p id="result" class="page-sub min-h-[60px]"></p>
+    
+    <!-- 入力前 -->
+    <div id="state-before" class="flex gap-2">
+        <a href="{% url 'schedules:dashboard' %}" class="btn-secondary flex-1 text-center">もどる</a>
+        <button type="button" id="start-btn" class="btn-primary flex-1">話す</button>
+    </div>
+
+    <!-- 入力中 -->
+    <div id="state-listening" class="flex flex-col gap-3 hidden">
+      <div id="equalizer" class="h-12 flex items-center justify-center border border-dashed rounded-lg text-xs">
+        イコライザー（あとで）
+      </div>
+    <div class="flex gap-2">
+        <button type="button" id="cancel-btn" class="btn-secondary flex-1">キャンセル</button>
+        <button type="button" id="confirm-btn" class="btn-primary flex-1">音声入力を終了する</button>
+      </div>
+    </div>
+
+    <!-- 入力ストップ -->
+    <div id="state-stopped" class="grid grid-cols-2 gap-2 hidden">
+        <button type="button" id="restart-btn" class="btn-secondary">最初から話す</button>
+        <button type="button" id="resume-btn" class="btn-secondary">続きを話す</button>
+        <button type="button" id="stopped-cancel-btn" class="btn-secondary">キャンセル</button>
+        <button type="button" id="stopped-confirm-btn" class="btn-primary">編集画面に進む</button>
+    </div>
+
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ja-JP';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    const resultEl = document.getElementById('result');
+
+    let finalText = '';
+    let endedBy = null;
+
+    recognition.onresult = (event) => {
+        let interimText = '';
+        for (let i = event.resultIndex; i < event.results.length; i++){
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalText += transcript;
+            } else {
+                interimText += transcript;
+            }
+        }
+        resultEl.textContent = finalText + interimText;    
+    };
+
+    recognition.onend  = () => {
+        if (endedBy === 'confirm') {
+            sendText();
+        } else if (endedBy === null) {
+            showState('stopped');
+        }
+    };
+
+    recognition.onerror = (event) => {
+        console.log('音声認識エラー：', event.error);
+    };
+
+    const states = {
+        before: document.getElementById('state-before'),
+        listening: document.getElementById('state-listening'),
+        stopped: document.getElementById('state-stopped'),
+    };
+
+    function showState(name) {
+        for (const key in states) {
+            if (key !== name) {
+                states[key].classList.add('hidden');
+            } else {
+                states[key].classList.remove('hidden');
+            };
+        };
+    };
+
+    async function sendText() {
+        if (finalText === '') {
+            return;
+        }
+        const response = await fetch('{% url "schedules:transcript" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ text:finalText}),
+        });
+        const data = await response.json();
+        console.log('返ってきた内容', data.text);
+        showState('before'); // 仮：あとで編集画面への移動に置き換える
+    };
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+        endedBy = null;
+        recognition.start();
+        showState('listening');
+    });
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+        endedBy = 'cancel';
+        recognition.abort();
+        showState('before');
+        finalText = '';
+        resultEl.textContent = '';
+    });
+    document.getElementById('confirm-btn').addEventListener('click', () => {
+        endedBy = 'confirm';
+        recognition.stop();
+    });
+    document.getElementById('restart-btn').addEventListener('click', () => {
+        finalText = '' ;
+        endedBy = null;
+        recognition.start();
+        showState('listening');
+        resultEl.textContent = '';
+    });
+    document.getElementById('resume-btn').addEventListener('click', () => {
+        endedBy = null;
+        recognition.start();
+        showState('listening');
+    });
+    document.getElementById('stopped-cancel-btn').addEventListener('click', () => {
+        finalText = '';
+        showState('before');
+        resultEl.textContent = '';
+    });
+    document.getElementById('stopped-confirm-btn').addEventListener('click', () => {
+        sendText();
+    });
+</script>    
+{% endblock %}
