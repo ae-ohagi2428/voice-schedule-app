@@ -26,6 +26,7 @@ jobs:
     env:
       SECRET_KEY: dummy-key-for-ci
       DEBUG: 'False'
+      OPENAI_API_KEY: dummy-key-for-ci
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db 
 
     steps:
