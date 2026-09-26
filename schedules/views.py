@@ -1,5 +1,6 @@
 import json
 
+import openai
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.utils import timezone
@@ -24,7 +25,10 @@ class TranscriptView(LoginRequiredMixin, View):
     def post(self, request):
         data = json.loads(request.body)
         text = data.get('text', '')
-        result = ask_ai(text)
+        try:
+            result = ask_ai(text)
+        except openai.OpenAIError:
+            return JsonResponse({'error': 'AIに接続できませんでした'}, status=503)
         return JsonResponse({'text': result})
     
 class ScheduleEditView(LoginRequiredMixin, UpdateView):
