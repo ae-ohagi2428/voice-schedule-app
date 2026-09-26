@@ -12,8 +12,11 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = 'RENDER' not in os.environ
+
+OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
 
 ALLOWED_HOSTS = []
 

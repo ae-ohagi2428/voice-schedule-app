@@ -6,6 +6,8 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
+from .ai import ask_ai
+
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/dashboard.html'
@@ -22,7 +24,8 @@ class TranscriptView(LoginRequiredMixin, View):
     def post(self, request):
         data = json.loads(request.body)
         text = data.get('text', '')
-        return JsonResponse({'text': text})
+        result = ask_ai(text)
+        return JsonResponse({'text': result})
     
 class ScheduleEditView(LoginRequiredMixin, UpdateView):
     template_name = 'schedules/schedule_edit.html'
