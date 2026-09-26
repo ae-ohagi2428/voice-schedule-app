@@ -1,8 +1,8 @@
 import json
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.utils import timezone
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView, UpdateView
 
