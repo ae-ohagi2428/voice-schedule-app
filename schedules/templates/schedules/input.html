@@ -32,6 +32,11 @@
         <button type="button" id="stopped-confirm-btn" class="btn-primary">編集画面に進む</button>
     </div>
 
+    <!-- 送信中 -->
+    <div id="state-sending" class="hidden">
+        <p class="page-sub text-center">かんがえ中……</p>
+    </div>
+
 </div>
 {% endblock %}
 {% block scripts %}
@@ -76,6 +81,7 @@
         before: document.getElementById('state-before'),
         listening: document.getElementById('state-listening'),
         stopped: document.getElementById('state-stopped'),
+        sending: document.getElementById('state-sending'),
     };
 
     function showState(name) {
@@ -90,18 +96,27 @@
 
     async function sendText() {
         if (finalText === '') {
+            showState('before');
             return;
         }
-        const response = await fetch('{% url "schedules:transcript" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}',
-            },
-            body: JSON.stringify({ text:finalText}),
-        });
-        const data = await response.json();
-        console.log('返ってきた内容', data.text);
+        showState('sending');
+        try {
+            const response = await fetch('{% url "schedules:transcript" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({ text:finalText}),
+            });
+            if (!response.ok) {
+                throw new Error('送信に失敗しました');
+            }
+            const data = await response.json();
+            console.log('返ってきた内容', data.text);
+        } catch (error) {
+            showToast('うまくいかなかったよ。もう一度話してね', 'error');
+        }
         showState('before'); // 仮：あとで編集画面への移動に置き換える
     };
 
@@ -120,6 +135,7 @@
     document.getElementById('confirm-btn').addEventListener('click', () => {
         endedBy = 'confirm';
         recognition.stop();
+        showState('sending');
     });
     document.getElementById('restart-btn').addEventListener('click', () => {
         finalText = '' ;

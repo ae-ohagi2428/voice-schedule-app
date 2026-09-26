@@ -1,10 +1,13 @@
 import json
 
+import openai
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView, UpdateView
+
+from .ai import ask_ai
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -22,7 +25,11 @@ class TranscriptView(LoginRequiredMixin, View):
     def post(self, request):
         data = json.loads(request.body)
         text = data.get('text', '')
-        return JsonResponse({'text': text})
+        try:
+            result = ask_ai(text)
+        except openai.OpenAIError:
+            return JsonResponse({'error': 'AIに接続できませんでした'}, status=503)
+        return JsonResponse({'text': result})
     
 class ScheduleEditView(LoginRequiredMixin, UpdateView):
     template_name = 'schedules/schedule_edit.html'
