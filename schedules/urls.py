@@ -7,6 +7,7 @@ from .views import (
     ScheduleUpdateView,
     SettingsView,
     TaskRunView,
+    TranscriptView,
 )
 
 app_name = 'schedules'
@@ -18,4 +19,5 @@ urlpatterns = [
     path('<int:pk>/edit/', ScheduleUpdateView.as_view(), name='schedule_update'),
     path('task_run/', TaskRunView.as_view(), name='task_run'),
     path('settings/', SettingsView.as_view(), name='settings'),
+    path('input/transcript/', TranscriptView.as_view(), name='transcript'),
 ]

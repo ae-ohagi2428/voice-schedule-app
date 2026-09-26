@@ -59,12 +59,17 @@
         }
         resultEl.textContent = finalText + interimText;    
     };
+
     recognition.onend  = () => {
         if (endedBy === 'confirm') {
-            console.log('送る内容：', finalText);
+            sendText();
         } else if (endedBy === null) {
             showState('stopped');
         }
+    };
+
+    recognition.onerror = (event) => {
+        console.log('音声認識エラー：', event.error);
     };
 
     const states = {
@@ -73,7 +78,7 @@
         stopped: document.getElementById('state-stopped'),
     };
 
-    function showState(name){
+    function showState(name) {
         for (const key in states) {
             if (key !== name) {
                 states[key].classList.add('hidden');
@@ -81,6 +86,23 @@
                 states[key].classList.remove('hidden');
             };
         };
+    };
+
+    async function sendText() {
+        if (finalText === '') {
+            return;
+        }
+        const response = await fetch('{% url "schedules:transcript" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ text:finalText}),
+        });
+        const data = await response.json();
+        console.log('返ってきた内容', data.text);
+        showState('before'); // 仮：あとで編集画面への移動に置き換える
     };
 
     document.getElementById('start-btn').addEventListener('click', () => {
@@ -98,7 +120,6 @@
     document.getElementById('confirm-btn').addEventListener('click', () => {
         endedBy = 'confirm';
         recognition.stop();
-        showState('stopped');
     });
     document.getElementById('restart-btn').addEventListener('click', () => {
         finalText = '' ;
@@ -118,7 +139,7 @@
         resultEl.textContent = '';
     });
     document.getElementById('stopped-confirm-btn').addEventListener('click', () => {
-        console.log('送る内容：', finalText);
+        sendText();
     });
 </script>    
 {% endblock %}
