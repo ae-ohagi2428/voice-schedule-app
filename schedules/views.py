@@ -29,7 +29,7 @@ class TranscriptView(LoginRequiredMixin, View):
             result = ask_ai(text)
         except openai.OpenAIError:
             return JsonResponse({'error': 'AIに接続できませんでした'}, status=503)
-        return JsonResponse({'text': result})
+        return JsonResponse(result.model_dump())
     
 class ScheduleEditView(LoginRequiredMixin, UpdateView):
     template_name = 'schedules/schedule_edit.html'
