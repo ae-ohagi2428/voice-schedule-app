@@ -116,7 +116,7 @@ correct_output = [
 
 def first_test(sample_text, now_time):
     answer_list = []
-    for text, now in zip(sample_text, now_time):
+    for text, now in zip(sample_text, now_time, strict=True):
         ai_answer = ask_ai(text, now)
         answer_list.append(ai_answer.model_dump())
     return answer_list
