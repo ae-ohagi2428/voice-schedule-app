@@ -113,7 +113,7 @@
                 throw new Error('送信に失敗しました');
             }
             const data = await response.json();
-            console.log('返ってきた内容', data.text);
+            console.log('返ってきた内容', data);
         } catch (error) {
             showToast('うまくいかなかったよ。もう一度話してね', 'error');
         }
