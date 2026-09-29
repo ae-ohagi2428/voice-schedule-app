@@ -109,11 +109,12 @@
                 },
                 body: JSON.stringify({ text:finalText}),
             });
-            if (!response.ok) {
-                throw new Error('送信に失敗しました');
-            }
             const data = await response.json();
-            console.log('返ってきた内容', data);
+            if (!response.ok) {
+                showToast(data.error || 'うまくいかなかったよ。もう一度話してね', 'error');
+            } else {
+                console.log('返ってきた内容', data);
+            }
         } catch (error) {
             showToast('うまくいかなかったよ。もう一度話してね', 'error');
         }

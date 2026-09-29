@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from django.conf import settings
 from django.utils import timezone
 from openai import OpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 INSTRUCTIONS = """
 # 役割
@@ -25,6 +27,7 @@ INSTRUCTIONS = """
 - スケジュールが複数書いてある場合には、これらの組み合わせを複数作ってください。
 - テキストに複数のスケジュールが書いてある場合、順番はテキストの順番のとおりとしてください。
 - 終了時刻が開始時刻より前になっても、そのまま返してください。
+- 「○○へ行く」という予定について、移動時間と行き先で過ごす時間は、1件の予定にまとめてください
 
 # 時刻の読み方
 - "start"及び"end"は24時間表記とします。午前X時、午後X時と入力された場合は、24時間表記に変換してください。
@@ -35,6 +38,7 @@ INSTRUCTIONS = """
 - 開始時刻の「12時」は、特に指定がなければ12:00として読んでください。
 - 終了時刻の「12時」は、開始時刻が午前の場合は12:00、開始時刻が12:00以降の場合には00:00として読んでください。
 - 終了時刻について判断がつかない場合は、その予定の開始時刻より後になる方を選んでください。
+- 終了時刻の判断について、開始時刻がnullの場合は、直前の予定の時刻より後になる方を選んでください。
 - 「半」は「30分」のことを指します。
 - 「正午」は「12:00」のことを指します。
 - 「これから」「今から」など、現在を指す言葉で始まる予定の開始時刻は、nullにしてください。
@@ -54,6 +58,30 @@ class ScheduleItem(BaseModel):
     start: str| None
     end: str | None
     duration_minutes: int | None
+
+    @field_validator('start', 'end')
+    @classmethod
+    def check_time_format(cls, value):
+        if value is None:
+            return value
+        datetime.strptime(value, '%H:%M')
+        return value
+
+    @field_validator('title')
+    @classmethod
+    def check_title(cls, value):
+        if not value.strip():
+            return '(名前なし)'
+        return value.strip()
+
+    @field_validator('duration_minutes')
+    @classmethod
+    def check_duration(cls, value):
+        if value is None or value < 1:
+            return None
+        return value
+
+    
 
 class ScheduleList(BaseModel):
     schedules: list[ScheduleItem]
