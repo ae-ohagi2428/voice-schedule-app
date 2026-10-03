@@ -9,6 +9,7 @@ from django.views.generic import TemplateView, UpdateView
 from pydantic import ValidationError
 
 from .ai import ask_ai
+from .formatting import format_schedules
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -29,8 +30,9 @@ class TranscriptView(LoginRequiredMixin, View):
 
         if not text.strip():
             return JsonResponse({'error': 'うまく聞き取れなかったよ。もう一度話してね。'}, status=400)
+        now = timezone.localtime()
         try:
-            result = ask_ai(text)
+            result = ask_ai(text, now)
         except openai.OpenAIError:
             return JsonResponse({'error': 'AIに接続できなかったよ。少し待ってから試してね。'}, status=503)
         except ValidationError:
@@ -38,8 +40,8 @@ class TranscriptView(LoginRequiredMixin, View):
 
         if not result.schedules:
             return JsonResponse({'error': '予定が見つからなかったよ。もう一度話してね。'}, status=422)
-
-        return JsonResponse(result.model_dump())
+        formatted = format_schedules(result.schedules, now)
+        return JsonResponse({'schedules': formatted})
     
 class ScheduleEditView(LoginRequiredMixin, UpdateView):
     template_name = 'schedules/schedule_edit.html'

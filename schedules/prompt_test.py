@@ -1,4 +1,7 @@
+from django.utils import timezone
+
 from schedules.ai import ask_ai
+from schedules.formatting import to_datetime
 
 sample_text = [
     "午後3時にカフェに行き午後4時まで滞在するそのあと買い物に行く60分かかる",
@@ -116,8 +119,9 @@ correct_output = [
 
 def first_test(sample_text, now_time):
     answer_list = []
+    today = timezone.localtime()
     for text, now in zip(sample_text, now_time, strict=True):
-        ai_answer = ask_ai(text, now)
+        ai_answer = ask_ai(text, to_datetime(now, today))
         answer_list.append(ai_answer.model_dump())
     return answer_list
 
