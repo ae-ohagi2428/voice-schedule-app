@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from django.conf import settings
-from django.utils import timezone
 from openai import OpenAI
 from pydantic import BaseModel, field_validator
 
@@ -77,8 +76,12 @@ class ScheduleItem(BaseModel):
     @field_validator('duration_minutes')
     @classmethod
     def check_duration(cls, value):
-        if value is None or value < 1:
+        if value is None:
             return None
+        if value < 1:
+            return None
+        if value > 1440:
+            return 1440
         return value
 
     
@@ -88,9 +91,7 @@ class ScheduleList(BaseModel):
 
 
 def ask_ai(text, now=None):
-    if now is None:
-        now = timezone.localtime().strftime('%H:%M')
-    user_input = f'現在の時刻：{now}\nテキスト：{text}'
+    user_input = f'現在の時刻：{now:%H:%M}\nテキスト：{text}'
     client = OpenAI()
     response = client.responses.parse(
         model=settings.OPENAI_MODEL,
