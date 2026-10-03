@@ -24,8 +24,6 @@ class RegisterView(CreateView):
         messages.success(self.request, '登録が完了しました')
         return response
 
-    
-
 class LoginView(DjangoLoginView):
     template_name = 'accounts/login.html'
     form_class = LoginForm

@@ -7,10 +7,16 @@
 <div class="px-[22px] pt-6 flex flex-col gap-4">
     <p id="result" class="page-sub min-h-[60px]"></p>
     
+    <!-- APIの残り回数を表示 -->
+    <p class="page-sub text-center">
+        今日はあと<span id="remaining">{{ remaining }}</span>回音声入力できるよ
+    </p>
+
     <!-- 入力前 -->
     <div id="state-before" class="flex gap-2">
         <a href="{% url 'schedules:dashboard' %}" class="btn-secondary flex-1 text-center">もどる</a>
-        <button type="button" id="start-btn" class="btn-primary flex-1">話す</button>
+        <button type="button" id="start-btn"
+            class="btn-primary flex-1">話す</button>
     </div>
 
     <!-- 入力中 -->
@@ -51,6 +57,10 @@
 
     let finalText = '';
     let endedBy = null;
+    let remaining = {{ remaining }};
+    const remainingEl = document.getElementById('remaining');
+    const startBtn = document.getElementById('start-btn');
+    updateRemaining(remaining);
 
     recognition.onresult = (event) => {
         let interimText = '';
@@ -93,6 +103,15 @@
             };
         };
     };
+    
+    function updateRemaining(value) {
+        remaining = value;
+        remainingEl.textContent = value;
+        if (value === 0) {
+            startBtn.classList.add('opacity-50');
+            startBtn.setAttribute('aria-disabled', 'true');
+        }
+    }
 
     async function sendText() {
         if (finalText === '') {
@@ -110,6 +129,9 @@
                 body: JSON.stringify({ text:finalText}),
             });
             const data = await response.json();
+            if (data.remaining !== undefined) {
+                updateRemaining(data.remaining);
+            }
             if (!response.ok) {
                 showToast(data.error || 'うまくいかなかったよ。もう一度話してね', 'error');
             } else {
@@ -122,6 +144,10 @@
     };
 
     document.getElementById('start-btn').addEventListener('click', () => {
+        if (remaining === 0) {
+            showToast('今日は既に5回使ったよ。また明日話してね。', 'error');
+            return;
+        }
         endedBy = null;
         recognition.start();
         showState('listening');
@@ -158,5 +184,6 @@
     document.getElementById('stopped-confirm-btn').addEventListener('click', () => {
         sendText();
     });
+
 </script>    
 {% endblock %}

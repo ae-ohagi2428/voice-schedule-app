@@ -17,6 +17,7 @@ DEBUG = 'RENDER' not in os.environ
 
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
+AI_DAILY_LIMIT = 5
 
 ALLOWED_HOSTS = []
 
