@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 from django.utils import timezone
 from pydantic import ValidationError
 
+from accounts.factories import UserFactory
 from schedules.formatting import (
     correct_end,
     correct_start,
@@ -186,3 +188,117 @@ class FormatSchedulesTest(SimpleTestCase):
         ]
         result = format_schedules(schedules, NOW)
         self.assertEqual(result[0]['end'], NOW.replace(hour=17, minute=1))
+
+class ScheduleEditViewTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.url = reverse('schedules:edit')
+    
+    def test_redirects_when_not_logged_in(self):
+    # ログインしていない状態で開く→ログインページへ移動する
+        response = self.client.get(self.url)
+        self.assertRedirects(response, f"{reverse('accounts:login')}?next={self.url}")
+        
+
+    def test_shows_today_own_schedules(self):
+    # 今日の自分の予定がある→表示される
+        now = timezone.localtime()
+        ScheduleFactory(
+            user=self.user,
+            title='カフェ',
+            start_at=now,
+            end_at=now + timedelta(hours=1),
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        titles = [s['title'] for s in response.context['schedules']]
+        self.assertEqual(titles, ['カフェ'])
+
+    def test_hides_other_day_and_other_user_schedules(self):
+    # 昨日の予定・ほかの人の予定がある→表示されない
+        now = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        yesterday = now - timedelta(days=1)
+        other_user = UserFactory()
+        
+        ScheduleFactory(
+            user=self.user,
+            title='今日の予定',
+            start_at=now,
+            end_at=now + timedelta(hours=1),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='昨日の予定',
+            start_at=yesterday,
+            end_at=yesterday+timedelta(hours=1),
+        )
+        ScheduleFactory(
+            user=other_user,
+            title='ほかの人の予定',
+            start_at=now,
+            end_at=now + timedelta(hours=1)
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        titles = [s['title'] for s in response.context['schedules']]
+        self.assertIn('今日の予定', titles)
+        self.assertNotIn('昨日の予定', titles)
+        self.assertNotIn('ほかの人の予定', titles)
+
+    def test_sorted_by_start_time(self):
+    # 予定が時刻の順でない順に入っている→時刻の順に並ぶ  
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        ScheduleFactory(
+            user=self.user,
+            title='夕方',
+            start_at=today.replace(hour=17),
+            end_at=today.replace(hour=18),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='朝',
+            start_at=today.replace(hour=9),
+            end_at=today.replace(hour=10),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='昼',
+            start_at=today.replace(hour=12),
+            end_at=today.replace(hour=13),
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(self.url)
+
+        titles = [s['title'] for s in response.context['schedules']]
+        self.assertEqual(titles, ['朝', '昼', '夕方'])
+        
+
+    def test_includes_new_schedules_from_session(self):
+    # セッションに新しい予定が入っている → 既存の予定と一緒に、is_new が True で並ぶ
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+
+        ScheduleFactory(
+            user=self.user,
+            title='既存の予定',
+            start_at=today.replace(hour=9),
+            end_at=today.replace(hour=10),
+        )
+        self.client.force_login(self.user)
+
+        session = self.client.session
+        session['new_schedules'] = [
+            {
+                'title': '新しい予定',
+                'start_at': today.replace(hour=11).isoformat(),
+                'end_at': today.replace(hour=12).isoformat(),
+            },
+        ]
+        session.save()
+
+        response = self.client.get(self.url)
+
+        schedules = response.context['schedules']
+        self.assertEqual([s['title'] for s in schedules], ['既存の予定', '新しい予定'])
+        self.assertFalse(schedules[0]['is_new'])
+        self.assertTrue(schedules[1]['is_new'])

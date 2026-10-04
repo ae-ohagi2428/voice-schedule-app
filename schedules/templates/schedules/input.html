@@ -135,12 +135,13 @@
             if (!response.ok) {
                 showToast(data.error || 'うまくいかなかったよ。もう一度話してね', 'error');
             } else {
-                console.log('返ってきた内容', data);
+                window.location.href = data.redirect_url;
+                return;
             }
         } catch (error) {
             showToast('うまくいかなかったよ。もう一度話してね', 'error');
         }
-        showState('before'); // 仮：あとで編集画面への移動に置き換える
+        showState('before');
     };
 
     document.getElementById('start-btn').addEventListener('click', () => {
