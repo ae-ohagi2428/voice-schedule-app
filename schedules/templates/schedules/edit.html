@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}予定編集ページ{% endblock %}
+
+{% block content %}
+<h1>予定編集ページ</h1>
+
+{% for schedule in schedules %}
+  {% include 'schedules/_schedule_row.html' %}
+{% empty %}
+  <p>今日の予定はまだありません</p>
+{% endfor %}
+{% endblock %}
+

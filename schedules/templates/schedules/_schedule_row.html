@@ -1,0 +1,2 @@
+<p class="{% if schedule.is_new %}text-[#C0708F]{% endif %}">
+    {{ schedule.start_at | time:"H:i" }}~{{ schedule.end_at|time:"H:i" }} {{ schedule.title }}</p>
