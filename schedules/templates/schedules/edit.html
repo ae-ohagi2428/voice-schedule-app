@@ -3,12 +3,40 @@
 {% block title %}予定編集ページ{% endblock %}
 
 {% block content %}
-<h1>予定編集ページ</h1>
+<div class="px-[22px] pt-6 pb-8 flex flex-col gap-5">
+  <h1 class="page-title text-center">予定編集ページ</h1>
 
-{% for schedule in schedules %}
-  {% include 'schedules/_schedule_row.html' %}
-{% empty %}
-  <p>今日の予定はまだありません</p>
-{% endfor %}
+  <form method="post" class="flex flex-col gap-3 w-full max-w-[350px] mx-auto">
+    {% csrf_token %}
+    {{ formset.management_form }}
+
+    {% for form in formset %}
+      <div class="flex flex-col gap-1">
+        <div class="bg-white rounded-[18px] border p-3 flex items-center gap-3 {% if form.instance.pk %}border-[#E2DAEE]{% else %}border-[#C0708F]{% endif %}">
+          {{ form.id }}
+          <div class="flex flex-col items-center gap-1 w-[120px] shrink-0">
+            {{ form.start_time }}
+            <span class="inline-block rotate-90 text-muted">〜</span>
+            {{ form.end_time }}
+          </div>
+          <div class="flex-1">
+            {{ form.title }}
+          </div>
+        </div>
+        {% for error in form.non_field_errors %}
+          <p class="field-error">{{ error }}</p>
+        {% endfor %}
+        {% for field in form.visible_fields %}
+          {% for error in field.errors %}
+            <p class="field-error">{{ error }}</p>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    {% empty %}
+      <p class="page-sub text-center">今日の予定はまだありません</p>
+    {% endfor %}
+
+    <button type="submit" class="btn-primary w-full mt-3">実行</button>
+  </form>
+</div>
 {% endblock %}
-
