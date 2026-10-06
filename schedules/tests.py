@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -16,6 +16,8 @@ from schedules.formatting import (
 
 from .ai import ScheduleItem
 from .factories import ScheduleFactory
+from .forms import ScheduleEditForm
+from .models import Schedule
 
 NOW = timezone.make_aware(datetime(2026, 10, 1, 15, 5))
 
@@ -211,7 +213,7 @@ class ScheduleEditViewTest(TestCase):
         )
         self.client.force_login(self.user)
         response = self.client.get(self.url)
-        titles = [s['title'] for s in response.context['schedules']]
+        titles = [form['title'].value() for form in response.context['formset']]
         self.assertEqual(titles, ['カフェ'])
 
     def test_hides_other_day_and_other_user_schedules(self):
@@ -230,7 +232,7 @@ class ScheduleEditViewTest(TestCase):
             user=self.user,
             title='昨日の予定',
             start_at=yesterday,
-            end_at=yesterday+timedelta(hours=1),
+            end_at=yesterday + timedelta(hours=1),
         )
         ScheduleFactory(
             user=other_user,
@@ -240,7 +242,7 @@ class ScheduleEditViewTest(TestCase):
         )
         self.client.force_login(self.user)
         response = self.client.get(self.url)
-        titles = [s['title'] for s in response.context['schedules']]
+        titles = [form['title'].value() for form in response.context['formset']]
         self.assertIn('今日の予定', titles)
         self.assertNotIn('昨日の予定', titles)
         self.assertNotIn('ほかの人の予定', titles)
@@ -270,12 +272,12 @@ class ScheduleEditViewTest(TestCase):
 
         response = self.client.get(self.url)
 
-        titles = [s['title'] for s in response.context['schedules']]
+        titles = [form['title'].value() for form in response.context['formset']]
         self.assertEqual(titles, ['朝', '昼', '夕方'])
         
 
     def test_includes_new_schedules_from_session(self):
-    # セッションに新しい予定が入っている → 既存の予定と一緒に、is_new が True で並ぶ
+    # 新しい予定は ID がない状態で並ぶ
         today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
 
         ScheduleFactory(
@@ -294,11 +296,157 @@ class ScheduleEditViewTest(TestCase):
                 'end_at': today.replace(hour=12).isoformat(),
             },
         ]
+        session['new_schedules_date'] = today.date().isoformat()
         session.save()
 
         response = self.client.get(self.url)
 
-        schedules = response.context['schedules']
-        self.assertEqual([s['title'] for s in schedules], ['既存の予定', '新しい予定'])
-        self.assertFalse(schedules[0]['is_new'])
-        self.assertTrue(schedules[1]['is_new'])
+        formset = response.context['formset']
+        self.assertEqual([form['title'].value() for form in formset], ['既存の予定', '新しい予定'])
+        self.assertIsNotNone(formset[0].instance.pk)
+        self.assertIsNone(formset[1].instance.pk)
+
+    def test_post_saves_and_redirects(self):
+        # 保存・実行画面へ移動・セッションが消える
+        self.client.force_login(self.user)
+
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        session = self.client.session
+        session['new_schedules'] = [{
+            'title': '記事を書く',
+            'start_at': today.replace(hour=10).isoformat(),
+            'end_at': today.replace(hour=12).isoformat(),
+        }, ]
+        session['new_schedules_date'] = today.date().isoformat()
+        session.save()
+
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '記事を書く',
+            'form-0-start_time': '10:00',
+            'form-0-end_time': '11:00',
+        }
+
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, reverse('schedules:task_run'))
+        self.assertTrue(
+            Schedule.objects.filter(user=self.user, title='記事を書く').exists()
+        )
+        self.assertNotIn('new_schedules', self.client.session)
+
+    def test_post_invalid_stays_on_page(self):
+        # エラーなら保存されず編集画面に残る
+        self.client.force_login(self.user)
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '朝ごはん',
+            'form-0-start_time': '07:00',
+            'form-0-end_time': '07:00',
+        }
+        response = self.client.post(self.url, data)
+        self.assertContains(response, '開始時刻と終了時刻は一緒にはできないよ')
+        self.assertFalse(
+            Schedule.objects.filter(user=self.user, title='朝ごはん').exists()
+        )
+
+    def test_post_saves_unchanged_new_schedules(self):
+        # 何も直さなくても新しい予定が保存される
+        self.client.force_login(self.user)
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        session = self.client.session
+        session['new_schedules'] = [{
+            'title': '書類作成',
+            'start_at': today.replace(hour=16).isoformat(),
+            'end_at': today.replace(hour=17).isoformat(),
+        }, ]
+        session['new_schedules_date'] = today.date().isoformat()
+        session.save()
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '書類作成',
+            'form-0-start_time': '16:00',
+            'form-0-end_time': '17:00',
+        }
+        self.client.post(self.url, data)
+        self.assertTrue(
+            Schedule.objects.filter(user=self.user, title='書類作成').exists()
+        )
+
+    def test_excludes_new_schedules_from_other_day(self):
+        # セッションの日付が今日でなければ並ばない
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        session_date = (timezone.localdate() - timedelta(days=1)).isoformat()
+
+        self.client.force_login(self.user)
+        session = self.client.session
+        session['new_schedules'] = [{
+            'title': '銀行へ行く',
+            'start_at': today.replace(hour=14).isoformat(),
+            'end_at': today.replace(hour=15).isoformat(),
+        }, ]
+        session['new_schedules_date'] = session_date
+        session.save()
+        response = self.client.get(self.url)
+        titles = [form['title'].value() for form in response.context['formset']]
+        self.assertNotIn('銀行へ行く', titles)
+        
+
+class ScheduleEditFormTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+
+    def test_same_start_and_end_is_invalid(self):
+        # 開始と終了が同じならエラー
+        form = ScheduleEditForm(data={'title': '外食', 'start_time': '19:00', 'end_time': '19:00'})
+        self.assertFalse(form.is_valid())
+        self.assertIn('開始時刻と終了時刻は一緒にはできないよ', form.non_field_errors())
+
+    def test_save_combines_today_and_time(self):
+        # 今日の日付と時刻で日時が入る
+        today = timezone.localdate()
+        form = ScheduleEditForm(data={'title': '散歩', 'start_time': '10:00', 'end_time': '11:00'}, user=self.user)
+        self.assertTrue(form.is_valid())
+        schedule = form.save()
+        start_date = timezone.localdate(schedule.start_at)
+        start_time = timezone.localtime(schedule.start_at).time()
+        end_date = timezone.localdate(schedule.end_at)
+        end_time = timezone.localtime(schedule.end_at).time()
+        self.assertEqual(start_date, today)
+        self.assertEqual(start_time, time(10, 0))
+        self.assertEqual(end_date, today)
+        self.assertEqual(end_time, time(11, 0))
+
+
+    def test_save_moves_end_to_next_day(self):
+        # 終了が前なら翌日になる
+        today = timezone.localdate()
+        next_day = today + timedelta(days=1)
+
+        form = ScheduleEditForm(
+            data={'title': '勉強', 'start_time': '23:00', 'end_time': '00:30'},
+            user=self.user
+        )
+        self.assertTrue(form.is_valid())
+        schedule = form.save()
+        start_date = timezone.localdate(schedule.start_at)
+        start_time = timezone.localtime(schedule.start_at).time()
+        end_date = timezone.localdate(schedule.end_at)
+        end_time = timezone.localtime(schedule.end_at).time()
+        self.assertEqual(start_date, today)
+        self.assertEqual(start_time, time(23, 0))
+        self.assertEqual(end_date, next_day)
+        self.assertEqual(end_time, time(0, 30))
+
+    def test_save_sets_user_for_new_schedule(self):
+        # 新しい予定に利用者が入る
+        form = ScheduleEditForm(
+            data={'title': 'ランニング', 'start_time': '18:00', 'end_time': '19:00'},
+            user=self.user
+        )
+        self.assertTrue(form.is_valid())
+        schedule = form.save()
+        self.assertEqual(schedule.user, self.user)
+
