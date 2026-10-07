@@ -37,6 +37,31 @@ class ScheduleInputView(LoginRequiredMixin, TemplateView):
         today = timezone.localdate()
         usage = get_today_usage(self.request.user, today)
         context['remaining'] = get_remaining(usage)
+
+        mode = self.request.GET.get('mode')
+        schedules = Schedule.objects.filter(user=self.request.user, start_at__date=today)
+        
+        schedules_list = []
+        for schedule in schedules:
+            s_dict = {
+                'title': schedule.title,
+                'start_at': schedule.start_at,
+                'end_at': schedule.end_at,
+                'is_new': False
+            }
+            schedules_list.append(s_dict)
+        if mode != 'restart' and self.request.session.get('new_schedules_date') == today.isoformat():
+            new_schedules = self.request.session.get('new_schedules', [])
+            for new_schedule in new_schedules:
+                new_s_dict = {
+                    'title': new_schedule['title'],
+                    'start_at': datetime.fromisoformat(new_schedule['start_at']),
+                    'end_at': datetime.fromisoformat(new_schedule['end_at']),
+                    'is_new': True
+                }
+                schedules_list.append(new_s_dict)
+        context['schedules'] = sorted(schedules_list, key=lambda s: s['start_at'])
+        context['mode'] = mode
         return context
 
 

@@ -1,0 +1,5 @@
+{% for schedule in schedules %}
+  {% include 'schedules/_schedule_row.html' %}
+{% empty %}
+  <p>今日の予定はまだありません</p>
+{% endfor %}

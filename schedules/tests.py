@@ -489,3 +489,66 @@ class ScheduleEditFormTest(TestCase):
         schedule = form.save()
         self.assertEqual(schedule.user, self.user)
 
+class ScheduleInputViewTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.url = reverse('schedules:input')
+
+
+    def test_back_link_to_dashboard_without_mode(self):
+        # URLにmodeがない場合→「もどる」でダッシュボードに遷移
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, reverse('schedules:dashboard'))
+
+    def test_back_link_to_edit_with_mode(self):
+        # URLにmodeがある場合→「編集ページにもどる」が表示され編集ページにもどる
+        self.client.force_login(self.user)
+        response = self.client.get(f"{reverse('schedules:input')}?mode=edit")
+        self.assertContains(response, reverse('schedules:edit'))
+
+    def test_shows_db_and_session_schedules(self):
+        # 画面にDBとセッションの予定が表示される
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(user=self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='図書館へ行く',
+            start_at=today.replace(hour=10),
+            end_at=today.replace(hour=12),
+        )
+        session = self.client.session
+        session['new_schedules'] = [{
+            'title': 'お昼ごはん',
+            'start_at': today.replace(hour=12).isoformat(),
+            'end_at': today.replace(hour=13).isoformat(),
+        }, ]
+        session['new_schedules_date'] = today.date().isoformat()
+        session.save()
+        response = self.client.get(self.url)
+        titles = [s['title'] for s in response.context['schedules']]
+        self.assertIn('図書館へ行く', titles)
+        self.assertIn('お昼ごはん', titles)
+         
+    def test_restart_hides_session_schedules(self):
+        # mode='restart'の場合、セッションの予定が表示されない
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(user=self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='図書館へ行く',
+            start_at=today.replace(hour=10),
+            end_at=today.replace(hour=12),
+        )
+        session = self.client.session
+        session['new_schedules'] = [{
+            'title': 'お昼ごはん',
+            'start_at': today.replace(hour=12).isoformat(),
+            'end_at': today.replace(hour=13).isoformat(),
+        }, ]
+        session['new_schedules_date'] = today.date().isoformat()
+        session.save()
+        response = self.client.get(f"{reverse('schedules:input')}?mode=restart")
+        titles = [s['title'] for s in response.context['schedules']]
+        self.assertIn('図書館へ行く', titles)
+        self.assertNotIn('お昼ごはん', titles)

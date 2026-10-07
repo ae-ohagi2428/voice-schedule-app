@@ -7,6 +7,10 @@
 <div class="px-[22px] pt-6 flex flex-col gap-4">
     <p id="result" class="page-sub min-h-[60px]"></p>
     
+    {% if schedules %}
+      {% include 'schedules/_schedule_list.html' %}
+    {% endif %}
+
     <!-- APIの残り回数を表示 -->
     <p class="page-sub text-center">
         今日はあと<span id="remaining">{{ remaining }}</span>回音声入力できるよ
@@ -14,7 +18,11 @@
 
     <!-- 入力前 -->
     <div id="state-before" class="flex gap-2">
-        <a href="{% url 'schedules:dashboard' %}" class="btn-secondary flex-1 text-center">もどる</a>
+        {% if mode %}
+          <a href="{% url 'schedules:edit' %}" class="btn-secondary flex-1 text-center">編集ページにもどる</a>
+        {% else %}
+          <a href="{% url 'schedules:dashboard' %}" class="btn-secondary flex-1 text-center">もどる</a>
+        {% endif %}
         <button type="button" id="start-btn"
             class="btn-primary flex-1">話す</button>
     </div>
@@ -25,7 +33,9 @@
         イコライザー（あとで）
       </div>
     <div class="flex gap-2">
-        <button type="button" id="cancel-btn" class="btn-secondary flex-1">キャンセル</button>
+        <button type="button" id="cancel-btn" class="btn-secondary flex-1">
+            {% if mode %}今の入力をキャンセル{% else %}キャンセル{% endif %}
+        </button>
         <button type="button" id="confirm-btn" class="btn-primary flex-1">音声入力を終了する</button>
       </div>
     </div>
