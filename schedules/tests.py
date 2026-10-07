@@ -1,4 +1,6 @@
+import json
 from datetime import datetime, time, timedelta
+from unittest.mock import patch
 
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -14,10 +16,11 @@ from schedules.formatting import (
     to_datetime,
 )
 
-from .ai import ScheduleItem
+from .ai import ScheduleItem, ScheduleList
 from .factories import ScheduleFactory
 from .forms import ScheduleEditForm
 from .models import Schedule
+from .usage import get_today_usage
 
 NOW = timezone.make_aware(datetime(2026, 10, 1, 15, 5))
 
@@ -425,13 +428,28 @@ class ScheduleEditViewTest(TestCase):
 
 
     def test_shows_links_to_input_with_mode(self):
-        # 編集ページ→入力ページへのリンクについてモードが2種類ある
+        # 編集ページ→入力ページへのリンクについてモード付きのリンクが2つある
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        
         self.client.force_login(self.user)
+        session = self.client.session
+        session['new_schedules'] = [{
+            'title': '日用品の買い出し',
+            'start_at': today.replace(hour=13).isoformat(),
+            'end_at': today.replace(hour=14).isoformat(),
+        }, ]
+        session['new_schedules_date'] = today.date().isoformat()
+        session.save()
+
         response = self.client.get(self.url)
         self.assertContains(response, f"{reverse('schedules:input')}?mode=restart")
         self.assertContains(response, f"{reverse('schedules:input')}?mode=edit")
 
-        
+    def test_hides_edit_link_without_new_schedules(self):
+        # 新しい予定がない場合は「声で編集」ボタンがない
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertNotContains(response, f"{reverse('schedules:input')}?mode=edit")
 
 class ScheduleEditFormTest(TestCase):
     def setUp(self):
@@ -552,3 +570,70 @@ class ScheduleInputViewTest(TestCase):
         titles = [s['title'] for s in response.context['schedules']]
         self.assertIn('図書館へ行く', titles)
         self.assertNotIn('お昼ごはん', titles)
+
+class TranscriptViewTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.url = reverse('schedules:transcript')
+
+    @patch('schedules.views.ask_ai')
+    def test_edit_mode_passes_current_schedules(self, mock_ask_ai):
+        # 編集モードなら、セッションの予定をask_aiに渡す
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(self.user)
+
+        new_schedules = [{
+            'title': '散歩',
+            'start_at': today.replace(hour=11).isoformat(),
+            'end_at': today.replace(hour=12).isoformat(),
+        }, ]
+
+        session = self.client.session
+        session['new_schedules'] = new_schedules
+        session['new_schedules_date'] = today.date().isoformat()
+        session.save()
+
+        mock_ask_ai.return_value = ScheduleList(schedules=[
+            ScheduleItem(title='散歩', start='12:00', end='13:00', duration_minutes=None),
+        ])
+
+        # 編集モードで送る
+        self.client.post(
+            self.url,
+            data=json.dumps({'text': '散歩を12時からにして', 'mode': 'edit'}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(mock_ask_ai.call_args.kwargs['current_schedules'], new_schedules)
+    
+    @patch('schedules.views.ask_ai')
+    def test_edit_mode_without_schedules_returns_400(self, mock_ask_ai):
+        # 編集モードで予定がなければ 400、AI を呼ばず、回数も減らない
+        self.client.force_login(self.user)
+        response = self.client.post(
+            self.url,
+            data=json.dumps({'text': '映画を14時からにして', 'mode': 'edit'}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        mock_ask_ai.assert_not_called()
+        usage = get_today_usage(self.user, timezone.localdate())
+        self.assertEqual(usage.count, 0)
+
+    
+    @patch('schedules.views.ask_ai')
+    def test_add_mode_passes_no_schedules(self, mock_ask_ai):
+        # モードがない場合、ask_aiに予定を渡さない(None)
+        self.client.force_login(self.user)
+
+        mock_ask_ai.return_value = ScheduleList(schedules=[
+            ScheduleItem(title='映画', start='14:00', end='16:00', duration_minutes=None),
+        ])
+
+        self.client.post(
+            self.url,
+            data=json.dumps({'text': '14時から16時まで映画'}),
+            content_type='application/json',
+        )
+        self.assertIsNone(mock_ask_ai.call_args.kwargs['current_schedules'])
