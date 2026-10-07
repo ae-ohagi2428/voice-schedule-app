@@ -125,6 +125,8 @@ class ScheduleEditView(LoginRequiredMixin, TemplateView):
             formset.save()
             request.session.pop('new_schedules', None)
             request.session.pop('new_schedules_date', None)
+            if request.POST.get('action') == 'add':
+                return redirect(f"{reverse('schedules:input')}?mode=add")
             return redirect('schedules:task_run')
         context = self.get_context_data()
         context['formset'] = formset
