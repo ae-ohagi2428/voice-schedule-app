@@ -392,6 +392,45 @@ class ScheduleEditViewTest(TestCase):
         response = self.client.get(self.url)
         titles = [form['title'].value() for form in response.context['formset']]
         self.assertNotIn('銀行へ行く', titles)
+
+    def test_post_add_saves_and_redirects_to_input(self):
+        # 「声で予定を追加」ボタン押下→DB保存→入力ページへ推移
+        self.client.force_login(self.user)
+
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        session = self.client.session
+        session['new_schedules'] = [{
+            'title': '風呂に入る',
+            'start_at': today.replace(hour=20).isoformat(),
+            'end_at': today.replace(hour=21).isoformat(),
+        }, ]
+        session['new_schedules_date'] = today.date().isoformat()
+        session.save()
+
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '風呂に入る',
+            'form-0-start_time': '20:00',
+            'form-0-end_time': '21:00',
+            'action': 'add'
+        }
+
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, f"{reverse('schedules:input')}?mode=add")
+        self.assertTrue(
+            Schedule.objects.filter(user=self.user, title='風呂に入る').exists()
+        )
+        self.assertNotIn('new_schedules', self.client.session)
+
+
+    def test_shows_links_to_input_with_mode(self):
+        # 編集ページ→入力ページへのリンクについてモードが2種類ある
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, f"{reverse('schedules:input')}?mode=restart")
+        self.assertContains(response, f"{reverse('schedules:input')}?mode=edit")
+
         
 
 class ScheduleEditFormTest(TestCase):

@@ -36,7 +36,10 @@
       <p class="page-sub text-center">今日の予定はまだありません</p>
     {% endfor %}
 
-    <button type="submit" class="btn-primary w-full mt-3">実行</button>
+    <button type="submit" name="action" value="run" class="btn-primary w-full mt-3">実行</button>
+    <button type="submit" name="action" value="add" class="btn-secondary w-full mt-3">声で予定を追加</button>
+    <a href="{% url 'schedules:input' %}?mode=restart" class="btn-secondary w-full mt-3 text-center">はじめから</a>
+    <a href="{% url 'schedules:input' %}?mode=edit" class="btn-secondary w-full mt-3 text-center">声で編集</a>
   </form>
 </div>
 {% endblock %}
