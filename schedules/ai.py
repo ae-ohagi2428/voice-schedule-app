@@ -52,6 +52,52 @@ INSTRUCTIONS = """
 - テキストに含まれていないスケジュール（休憩など）を追加しないでください。
 
 """
+
+INSTRUCTIONS_EDIT = """
+# 役割
+- 1日のスケジュールを管理・実行できるアプリの中に組み込まれています。
+- あなたの役割は、今の予定の一覧を、テキストの指示どおりに直して、決まった形で返すことです。
+- 変換したデータは、その後別のプログラムに渡され、再度整形処理が行われます。
+
+# 入力
+- 現在の時刻、今の予定の一覧、テキストが入力されます。
+- 今の予定の一覧は、1行に1件、「開始時刻〜終了時刻 予定の名前」の形で書かれています。
+- テキストは、音声入力による予定を直す指示が、文字に変換されたものです。
+- 音声入力が文字に変換されたテキストであるため、句読点がないこと、言い直しが含まれること、漢字の変換に誤りがあることがあります。言い直している箇所は、後に言った内容を採用してください。
+
+# 返し方
+- 直したあとの予定の一覧を、全件返してください。
+- テキストで触れていない予定は、名前・開始時刻・終了時刻を変えずに、そのまま返してください。
+- 開始時刻だけを変える指示の場合は、元の予定の長さを保つように、終了時刻もずらしてください。
+- 「やめる」「消して」「なし」などと言われた予定は、一覧に入れないでください。
+- 「〇〇も入れて」「追加して」などと言われた予定は、一覧に足してください。
+- どの予定を指しているか判断できない指示は、無視してください。
+
+# 各項目の決まり
+- "title"に予定の名前を入れてください。nullは認めません。
+- "start"と"end"には、時刻をHH:MM形式で入れてください。
+- "duration_minutes"は、新しく足した予定で所要時間が言われた場合のみ、分単位の数字で入れてください。それ以外はnullにしてください。
+- 新しく足した予定で、開始時刻や終了時刻が言われていない場合は、nullにしてください。
+
+# 時刻の読み方
+- "start"及び"end"は24時間表記とします。午前X時、午後X時と入力された場合は、24時間表記に変換してください。
+- 0時01分から11時59分までの時刻について、「午前」または「午後」が付いていない場合は、下記のルールに基づいて補ってください。
+  1. 開始時刻について、現在の時刻より大きく前（1時間以上前）にならない方を選んでください。
+  2. 1で決まらない場合は、予定の内容や前後の予定から、最も自然な方を選んでください。
+  3. それでも判断がつかない場合は、現在の時刻以降で今日中になる方を選んでください。
+- 開始時刻の「12時」は、特に指定がなければ12:00として読んでください。
+- 終了時刻の「12時」は、開始時刻が午前の場合は12:00、開始時刻が12:00以降の場合には00:00として読んでください。
+- 終了時刻について判断がつかない場合は、その予定の開始時刻より後になる方を選んでください。
+- 終了時刻の判断について、開始時刻がnullの場合は、直前の予定の時刻より後になる方を選んでください。
+- 「半」は「30分」のことを指します。
+- 「正午」は「12:00」のことを指します。
+- 「これから」「今から」など、現在を指す言葉で始まる予定の開始時刻は、nullにしてください。
+
+# してはいけないこと
+- 今日の予定のみ扱います。明日など別の日の予定は入れないでください。
+- テキストに含まれていない予定(休憩など)を、勝手に足さないでください。
+"""
+
 class ScheduleItem(BaseModel):
     title: str
     start: str| None
@@ -90,12 +136,25 @@ class ScheduleList(BaseModel):
     schedules: list[ScheduleItem]
 
 
-def ask_ai(text, now=None):
+def ask_ai(text, now=None, current_schedules=None):
+    instructions = INSTRUCTIONS
     user_input = f'現在の時刻：{now:%H:%M}\nテキスト：{text}'
+
+    if current_schedules:
+        instructions = INSTRUCTIONS_EDIT
+        schedule_list = []
+        for schedule in current_schedules:
+            start = datetime.fromisoformat(schedule['start_at'])
+            end = datetime.fromisoformat(schedule['end_at'])
+            data = f"{start:%H:%M}〜{end:%H:%M} {schedule['title']}"
+            schedule_list.append(data)
+        lines = '\n'.join(schedule_list)
+        user_input = f'現在の時刻：{now:%H:%M}\n今の予定：\n{lines}\nテキスト：{text}'
+    
     client = OpenAI()
     response = client.responses.parse(
         model=settings.OPENAI_MODEL,
-        instructions=INSTRUCTIONS,
+        instructions=instructions,
         input=user_input,
         text_format=ScheduleList,
         reasoning={'effort': 'low'},

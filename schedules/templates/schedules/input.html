@@ -64,7 +64,8 @@
     recognition.continuous = true;
 
     const resultEl = document.getElementById('result');
-
+    
+    const mode = '{{ mode|default:""|escapejs }}';
     let finalText = '';
     let endedBy = null;
     let remaining = {{ remaining }};
@@ -136,7 +137,7 @@
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}',
                 },
-                body: JSON.stringify({ text:finalText}),
+                body: JSON.stringify({ text:finalText, mode: mode }),
             });
             const data = await response.json();
             if (data.remaining !== undefined) {

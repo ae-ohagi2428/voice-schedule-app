@@ -69,6 +69,7 @@ class TranscriptView(LoginRequiredMixin, View):
     def post(self, request):
         data = json.loads(request.body)
         text = data.get('text', '')
+        mode = data.get('mode')
 
         if not text.strip():
             return JsonResponse({'error': 'うまく聞き取れなかったよ。もう一度話してね。'}, status=400)
@@ -76,12 +77,18 @@ class TranscriptView(LoginRequiredMixin, View):
         now = timezone.localtime()
         today = now.date()
         usage = get_today_usage(request.user, today)
+        current_schedules = None
+        if mode == 'edit':
+            if request.session.get('new_schedules_date') == today.isoformat():
+                current_schedules = request.session.get('new_schedules', [])
+            if not current_schedules:
+                return JsonResponse({'error': '直せる予定がないよ'}, status=400)
 
         if usage.count >= settings.AI_DAILY_LIMIT:
             return JsonResponse({'error': '今日は5回使ったよ。また明日話してね。'}, status=429)
         
         try:
-            result = ask_ai(text, now)
+            result = ask_ai(text, now, current_schedules=current_schedules)
         except openai.OpenAIError:
             return JsonResponse({'error': 'AIに接続できなかったよ。少し待ってから試してね。'}, status=503)
         except ValidationError:
