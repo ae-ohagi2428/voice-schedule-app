@@ -486,6 +486,34 @@ class ScheduleEditViewTest(TestCase):
         self.assertContains(response, 'empty-form')
         self.assertContains(response, '__prefix__')
 
+    def test_post_deletes_marked_existing_schedule(self):
+        # 既存の予定にDELETEフラグを付けると、DBから削除される
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(user=self.user)
+        schedule = ScheduleFactory(
+            user=self.user,
+            title='百均に行く',
+            start_at=today.replace(hour=11),
+            end_at=today.replace(hour=11, minute=30)
+        )
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '1',
+            'form-0-id': str(schedule.pk),
+            'form-0-title': schedule.title,
+            'form-0-start_time': '11:00',
+            'form-0-end_time': '11:30',
+            'form-0-DELETE': 'on',
+        }
+        self.client.post(self.url, data)
+        self.assertFalse(Schedule.objects.filter(pk=schedule.pk).exists())
+
+    def test_hides_restart_button_without_schedules(self):
+        # 予定がない場合には、編集画面に「入れなおす」ボタンが表示されない
+        self.client.force_login(user=self.user)
+        response = self.client.get(self.url)
+        self.assertNotContains(response, 'id="restart-btn"')
+
 class ScheduleEditFormTest(TestCase):
     def setUp(self):
         self.user = UserFactory()
@@ -693,3 +721,66 @@ class TranscriptViewTest(TestCase):
             content_type='application/json',
         )
         self.assertIsNone(mock_ask_ai.call_args.kwargs['current_schedules'])
+
+class ScheduleClearViewTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.url = reverse('schedules:clear')
+
+    def test_clear_deletes_today_schedules_and_session(self):
+        # 「今日の予定を最初から入れなおす」ボタンを押すと、今日の予定がDBから消え、セッションのデータも消える
+        self.client.force_login(user=self.user)
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        schedule = ScheduleFactory(
+            user=self.user,
+            title='ごみ捨て',
+            start_at=today.replace(hour=7),
+            end_at=today.replace(hour=7, minute=10)
+        )
+        session = self.client.session
+        session['new_schedules'] = [{
+            'title': '朝ごはんの準備',
+            'start_at': today.replace(hour=7, minute=10).isoformat(),
+            'end_at': today.replace(hour=7, minute=45).isoformat(),
+        }, ]
+        session['new_schedules_date'] = today.date().isoformat()
+        session.save()
+        response = self.client.post(self.url)
+        self.assertRedirects(response, f"{reverse('schedules:input')}?mode=restart")
+        self.assertFalse(Schedule.objects.filter(pk=schedule.pk).exists())
+        self.assertNotIn('new_schedules', self.client.session)
+
+    def test_clear_keeps_other_day_and_other_user(self):
+        # 今日の予定を削除した場合でも、同ユーザーの別日程のスケジュールや別ユーザーのスケジュールは削除されない
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(user=self.user)
+        other_user = UserFactory()
+        other_user_schedule = ScheduleFactory(
+            user=other_user,
+            title='犬の散歩',
+            start_at=today.replace(hour=7),
+            end_at=today.replace(hour=7, minute=30),
+        )
+        my_schedule_tomorrow = ScheduleFactory(
+            user=self.user,
+            title='ホームセンターに行く',
+            start_at=today.replace(hour=10) + timedelta(days=1),
+            end_at=today.replace(hour=12) + timedelta(days=1),
+        )
+        self.client.post(self.url)
+        self.assertTrue(Schedule.objects.filter(pk=other_user_schedule.pk).exists())
+        self.assertTrue(Schedule.objects.filter(pk=my_schedule_tomorrow.pk).exists())
+
+    def test_clear_rejects_get(self):
+        # /clearのURLを直接開いても405エラーとなり、予定も消えない
+        self.client.force_login(user=self.user)
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        schedule = ScheduleFactory(
+            user=self.user,
+            title='友達に会う',
+            start_at=today.replace(hour=12),
+            end_at=today.replace(hour=17),
+        )
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Schedule.objects.filter(pk=schedule.pk).exists())
