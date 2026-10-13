@@ -451,6 +451,41 @@ class ScheduleEditViewTest(TestCase):
         response = self.client.get(self.url)
         self.assertNotContains(response, f"{reverse('schedules:input')}?mode=edit")
 
+    def test_post_saves_manually_added_schedule(self):
+        self.client.force_login(self.user)
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '皿洗い',
+            'form-0-start_time': '21:00',
+            'form-0-end_time': '21:20'
+        }
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, reverse('schedules:task_run'))
+        self.assertTrue(Schedule.objects.filter(user=self.user, title='皿洗い').exists())
+        
+    def test_post_ignores_deleted_new_row(self):
+        # 編集ページで×を押した予定は保存されず、エラー表示もされない
+        self.client.force_login(self.user)
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '',
+            'form-0-start_time': '',
+            'form-0-end_time': '',
+            'form-0-DELETE': 'on'
+        }
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, reverse('schedules:task_run'), fetch_redirect_response=False)
+        self.assertFalse(Schedule.objects.filter(user=self.user).exists())
+
+    def test_shows_add_button_and_empty_form(self):
+        self.client.force_login(user=self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'add-btn')
+        self.assertContains(response, 'empty-form')
+        self.assertContains(response, '__prefix__')
+
 class ScheduleEditFormTest(TestCase):
     def setUp(self):
         self.user = UserFactory()
@@ -506,6 +541,27 @@ class ScheduleEditFormTest(TestCase):
         self.assertTrue(form.is_valid())
         schedule = form.save()
         self.assertEqual(schedule.user, self.user)
+
+    def test_empty_times_no_same_time_error(self):
+        # 開始時刻・終了時刻どちらも空欄の場合に「～は一緒にはできないよ」というエラーメッセージは表示されない
+        form = ScheduleEditForm(
+            data={'title': '読書', 'start_time': '', 'end_time': ''},
+            user=self.user
+        )
+        self.assertFalse(form.is_valid())
+        self.assertNotIn('開始時刻と終了時刻は一緒にはできないよ', form.non_field_errors())
+
+
+    def test_required_error_messages(self):
+        form = ScheduleEditForm(
+            data={'title': '', 'start_time': '', 'end_time': ''},
+            user=self.user
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('タスク名を入れてね', form.errors['title'])
+        self.assertIn('開始時刻を入れてね', form.errors['start_time'])
+        self.assertIn('終了時刻を入れてね', form.errors['end_time'])
+
 
 class ScheduleInputViewTest(TestCase):
     def setUp(self):
