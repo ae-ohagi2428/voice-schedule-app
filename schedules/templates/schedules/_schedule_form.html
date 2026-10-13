@@ -10,7 +10,7 @@
       {{ form.title }}
     </div>
     <span class="hidden">{{ form.DELETE }}</span>
-    {% if not form.instance.pk %}<button type="button" class="delete-btn">×</button>{% endif %}
+    <button type="button" class="delete-btn">×</button>
   </div>
   {% for error in form.non_field_errors %}
     <p class="field-error">{{ error }}</p>

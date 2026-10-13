@@ -18,7 +18,11 @@
 
     <button type="submit" name="action" value="run" class="btn-primary w-full mt-3">実行</button>
     <button type="submit" name="action" value="add" class="btn-secondary w-full mt-3">声で予定を追加</button>
-    <a href="{% url 'schedules:input' %}?mode=restart" class="btn-secondary w-full mt-3 text-center">今入れた予定を入れなおす</a>
+    {% if formset.forms %}
+    <button type="button" id="restart-btn" class="btn-secondary w-full mt-3"
+      data-saved-count="{{ formset.initial_form_count }}"
+      data-restart-url="{% url 'schedules:input' %}?mode=restart">入れなおす</button>
+    {% endif %}
     {% if formset.extra_forms %}
     <a href="{% url 'schedules:input' %}?mode=edit" class="btn-secondary w-full mt-3 text-center">声で編集</a>
     {% endif %}
@@ -26,6 +30,16 @@
       {% include 'schedules/_schedule_form.html' with form=formset.empty_form %}
     </template>
   </form>
+  <dialog id="restart-dialog" class="m-auto rounded-[18px] p-5 backdrop:bg-black/30">
+    <div class="flex flex-col gap-3">
+      <button type="button" id="restart-new-btn" class="btn-secondary w-full">今入れた予定だけ入れなおす</button>
+      <form method="post" action="{% url 'schedules:clear' %}" id="clear-form">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary w-full">今日の予定を最初から入れなおす</button>
+      </form>
+      <button type="button" id="restart-cancel-btn" class="btn-secondary w-full">やめる</button>
+    </div>
+  </dialog>
 </div>
 
 <script>
@@ -43,11 +57,54 @@
       totalInput.value = index + 1;
     }
     if (deleteBtn) {
-      const row = deleteBtn.closest('.schedule-row');
-      const deleteInput = row.querySelector('input[name$="-DELETE"]');
-      deleteInput.checked = true;
-      row.classList.add('hidden');
+      const ok = confirm('本当に削除しますか？');
+      if (ok) {
+        const row = deleteBtn.closest('.schedule-row');
+        const deleteInput = row.querySelector('input[name$="-DELETE"]');
+        deleteInput.checked = true;
+        row.classList.add('hidden');
+      }
     }
   });
+  const restartBtn = document.getElementById('restart-btn');
+  if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+      const num = Number(restartBtn.dataset.savedCount);
+      if (num >= 1) {
+        restartDialog.showModal();
+      } else {
+        const ok = confirm('予定を保存せずに入力ページに戻ってよいですか？');
+        if (ok) {
+          location.href=restartBtn.dataset.restartUrl;
+        }
+      }
+    });
+  }
+  const restartDialog = document.getElementById('restart-dialog');
+  const restartNewBtn = document.getElementById('restart-new-btn');
+  const clearForm = document.getElementById('clear-form');
+  const restartCancelBtn = document.getElementById('restart-cancel-btn');
+
+  clearForm.addEventListener('submit', (event) => {
+    const ok = confirm('今日の予定を全て削除して、入力ページに戻ってよいですか？');
+    if (!ok) {
+      event.preventDefault();
+      restartDialog.close();
+    }
+  });
+  restartNewBtn.addEventListener('click', () => {
+    const ok = confirm('今入れた予定を保存せずに入力ページに戻ってよいですか？');
+    if (ok) {
+      location.href=restartBtn.dataset.restartUrl;
+    } else {
+      restartDialog.close();
+    }
+  });
+  restartCancelBtn.addEventListener('click', () => {
+    restartDialog.close();
+  });
+
+  
+
 </script>
 {% endblock %}

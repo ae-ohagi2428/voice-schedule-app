@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
-from django.views.generic import TemplateView, UpdateView
+from django.views.generic import TemplateView
 from pydantic import ValidationError
 
 from .ai import ask_ai
@@ -165,11 +165,13 @@ class ScheduleEditView(LoginRequiredMixin, TemplateView):
         context['formset'] = formset
         return self.render_to_response(context)
 
-
-
-class ScheduleUpdateView(LoginRequiredMixin, UpdateView):
-    template_name = 'schedules/schedule_update.html'
-
+class ScheduleClearView(LoginRequiredMixin, View):
+    def post(self, request):
+        today = timezone.localdate()
+        Schedule.objects.filter(user=request.user, start_at__date=today).delete()
+        request.session.pop('new_schedules', None)
+        request.session.pop('new_schedules_date', None)
+        return redirect(f"{reverse('schedules:input')}?mode=restart")
 
 class TaskRunView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/task_run.html'
