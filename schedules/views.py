@@ -136,7 +136,8 @@ class ScheduleEditView(LoginRequiredMixin, TemplateView):
         ScheduleFormSet = modelformset_factory(
             Schedule,
             form=ScheduleEditForm,
-            extra=len(new_schedules)
+            extra=len(new_schedules),
+            can_delete=True
         )
         formset = ScheduleFormSet(
             queryset=existing,

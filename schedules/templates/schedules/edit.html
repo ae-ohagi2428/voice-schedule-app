@@ -6,32 +6,12 @@
 <div class="px-[22px] pt-6 pb-8 flex flex-col gap-5">
   <h1 class="page-title text-center">予定編集ページ</h1>
 
-  <form method="post" class="flex flex-col gap-3 w-full max-w-[350px] mx-auto">
+  <form method="post" id="edit-form" class="flex flex-col gap-3 w-full max-w-[350px] mx-auto">
     {% csrf_token %}
     {{ formset.management_form }}
-
+    <button type="button" class="add-btn">⊕</button>
     {% for form in formset %}
-      <div class="flex flex-col gap-1">
-        <div class="bg-white rounded-[18px] border p-3 flex items-center gap-3 {% if form.instance.pk %}border-[#E2DAEE]{% else %}border-[#C0708F]{% endif %}">
-          {{ form.id }}
-          <div class="flex flex-col items-center gap-1 w-[120px] shrink-0">
-            {{ form.start_time }}
-            <span class="inline-block rotate-90 text-muted">〜</span>
-            {{ form.end_time }}
-          </div>
-          <div class="flex-1">
-            {{ form.title }}
-          </div>
-        </div>
-        {% for error in form.non_field_errors %}
-          <p class="field-error">{{ error }}</p>
-        {% endfor %}
-        {% for field in form.visible_fields %}
-          {% for error in field.errors %}
-            <p class="field-error">{{ error }}</p>
-          {% endfor %}
-        {% endfor %}
-      </div>
+      {% include 'schedules/_schedule_form.html' %}
     {% empty %}
       <p class="page-sub text-center">今日の予定はまだありません</p>
     {% endfor %}
@@ -42,6 +22,32 @@
     {% if formset.extra_forms %}
     <a href="{% url 'schedules:input' %}?mode=edit" class="btn-secondary w-full mt-3 text-center">声で編集</a>
     {% endif %}
+    <template id="empty-form">
+      {% include 'schedules/_schedule_form.html' with form=formset.empty_form %}
+    </template>
   </form>
 </div>
+
+<script>
+  const form = document.getElementById('edit-form');
+  form.addEventListener('click', (event) => {
+    const addBtn = event.target.closest('.add-btn');
+    const deleteBtn = event.target.closest('.delete-btn');
+    if (addBtn) {
+      const totalInput = document.getElementById('id_form-TOTAL_FORMS');
+      const index = Number(totalInput.value);
+      const emptyHtml = document.getElementById('empty-form').innerHTML;
+      const html = emptyHtml.replaceAll('__prefix__', index);
+      const anchor = addBtn.closest('.schedule-row') || addBtn;
+      anchor.insertAdjacentHTML('afterend', html);
+      totalInput.value = index + 1;
+    }
+    if (deleteBtn) {
+      const row = deleteBtn.closest('.schedule-row');
+      const deleteInput = row.querySelector('input[name$="-DELETE"]');
+      deleteInput.checked = true;
+      row.classList.add('hidden');
+    }
+  });
+</script>
 {% endblock %}

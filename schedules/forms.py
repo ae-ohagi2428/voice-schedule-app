@@ -9,15 +9,20 @@ from .models import Schedule
 # 予定1件分のフォームをつくる
 class ScheduleEditForm(forms.ModelForm):
     start_time = forms.TimeField(
-        widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M')
+        widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+        error_messages={'required': '開始時刻を入れてね'}
     )
     end_time = forms.TimeField(
-        widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M')
+        widget=forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+        error_messages={'required': '終了時刻を入れてね'}
     )
 
     class Meta:
         model = Schedule
         fields = ['title']
+        error_messages = {
+             'title': {'required': 'タスク名を入れてね'},
+        }
 
     def __init__(self, user=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,7 +38,7 @@ class ScheduleEditForm(forms.ModelForm):
         cleaned_data = super().clean()
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
-        if start_time == end_time:
+        if start_time and end_time and start_time == end_time:
             raise forms.ValidationError('開始時刻と終了時刻は一緒にはできないよ')
         return cleaned_data  
         
