@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from itertools import combinations
 
 from django import forms
 from django.utils import timezone
@@ -41,10 +42,9 @@ class ScheduleEditForm(forms.ModelForm):
         if start_time and end_time and start_time == end_time:
             raise forms.ValidationError('開始時刻と終了時刻は一緒にはできないよ')
         return cleaned_data  
-        
-    def save(self, commit=True):
-        # start_time・end_time と今日の日付から、start_at・end_at を組み立てて保存する
-        instance = super().save(commit=False)
+
+    def get_datetimes(self):
+        # start_time・end_time と今日の日付から、start_at・end_at を組み立てる
         start_time = self.cleaned_data['start_time']
         end_time = self.cleaned_data['end_time']
         today = timezone.localdate()
@@ -52,10 +52,14 @@ class ScheduleEditForm(forms.ModelForm):
         end_datetime = datetime.combine(today, end_time)
         start_at = timezone.make_aware(start_datetime)
         end_at = timezone.make_aware(end_datetime)
-
+        
         if end_at < start_at:
             end_at = end_at + timedelta(days=1)
+        return start_at, end_at
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        start_at, end_at = self.get_datetimes()
         instance.start_at = start_at
         instance.end_at = end_at
 
@@ -68,3 +72,39 @@ class ScheduleEditForm(forms.ModelForm):
 
     def has_changed(self):
         return True
+
+
+class BaseScheduleFormSet(forms.BaseModelFormSet):
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+        items = []
+        for form in self.forms:
+            if not form.cleaned_data.get('DELETE'):
+                start_at, end_at = form.get_datetimes()
+                items.append({'form': form, 'start': start_at, 'end': end_at})
+        for a, b in combinations(items, 2):
+            if a['start'] < b['end'] and b['start'] < a['end']:
+                a['form'].add_error(
+                    None,
+                    f"{b['form'].cleaned_data['title']}({b['start']:%H:%M}～{b['end']:%H:%M})と時間が重なってるみたい。重ならない時間に直してね"
+                )
+                b['form'].add_error(
+                    None,
+                    f"{a['form'].cleaned_data['title']}({a['start']:%H:%M}～{a['end']:%H:%M})と時間が重なってるみたい。重ならない時間に直してね"
+                )
+        
+        user = self.form_kwargs.get('user')
+        today = timezone.localdate()
+        ids = {form.instance.pk for form in self.forms if form.instance.pk}
+        schedules = Schedule.objects.filter(user=user, start_at__date=today).exclude(pk__in=ids)
+        for schedule in schedules:
+            db_start = timezone.localtime(schedule.start_at)
+            db_end = timezone.localtime(schedule.end_at)
+            for item in items:
+                if item['start'] < db_end and db_start < item['end']:
+                    item['form'].add_error(
+                        None,
+                        f"{schedule.title}({db_start:%H:%M}〜{db_end:%H:%M})と時間が重なってるみたい。重ならない時間に直してね"
+                    )

@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from .ai import ask_ai
 from .formatting import format_schedules
-from .forms import ScheduleEditForm
+from .forms import BaseScheduleFormSet, ScheduleEditForm
 from .models import Schedule
 from .usage import add_usage, get_remaining, get_today_usage
 
@@ -136,6 +136,7 @@ class ScheduleEditView(LoginRequiredMixin, TemplateView):
         ScheduleFormSet = modelformset_factory(
             Schedule,
             form=ScheduleEditForm,
+            formset=BaseScheduleFormSet,
             extra=len(new_schedules),
             can_delete=True
         )
