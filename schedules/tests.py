@@ -514,6 +514,85 @@ class ScheduleEditViewTest(TestCase):
         response = self.client.get(self.url)
         self.assertNotContains(response, 'id="restart-btn"')
 
+    def test_post_overlap_in_formset_is_invalid(self):
+        # 予定の時間が重なっている場合はエラーになり、保存されない
+        self.client.force_login(self.user)
+        data = {
+            'form-TOTAL_FORMS': '2',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '散歩',
+            'form-0-start_time': '10:00',
+            'form-0-end_time': '11:00',
+            'form-1-title': '昼ごはん',
+            'form-1-start_time': '10:30',
+            'form-1-end_time': '11:30',
+        }
+        response = self.client.post(self.url, data)
+        self.assertContains(response, '時間が重なってるみたい')
+        self.assertFalse(Schedule.objects.filter(user=self.user).exists())
+
+    def test_post_adjacent_schedules_are_valid(self):
+        # 前の予定の終了時刻と次の予定の開始時刻が同じ場合にはエラーにならない
+        self.client.force_login(self.user)
+        data = {
+            'form-TOTAL_FORMS': '2',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '散歩',
+            'form-0-start_time': '10:00',
+            'form-0-end_time': '11:00',
+            'form-1-title': '昼ごはん',
+            'form-1-start_time': '11:00',
+            'form-1-end_time': '12:00',
+        }
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, reverse('schedules:task_run'))
+        self.assertEqual(Schedule.objects.filter(user=self.user).count(), 2)
+
+    def test_post_overlap_with_deleted_row_is_valid(self):
+        # 時間帯が重なっている場合でも、削除された予定の場合はエラーにならず保存される
+        self.client.force_login(self.user)
+        data = {
+            'form-TOTAL_FORMS': '2',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '散歩',
+            'form-0-start_time': '10:00',
+            'form-0-end_time': '11:00',
+            'form-1-title': '昼ごはん',
+            'form-1-start_time': '10:30',
+            'form-1-end_time': '11:30',
+            'form-1-DELETE': 'on'
+        }
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, reverse('schedules:task_run'))
+        self.assertTrue(Schedule.objects.filter(user=self.user, title='散歩').exists())
+        self.assertFalse(Schedule.objects.filter(user=self.user, title='昼ごはん').exists())
+
+    def test_post_overlap_with_db_schedule_is_invalid(self):
+        # DBにある予定と新しく送った予定の時間が重なっている場合はエラーになり、新しい予定は保存されない
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(user=self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='カフェへ行く',
+            start_at=today.replace(hour=10),
+            end_at=today.replace(hour=12),
+        )
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': 'カフェへ行く',
+            'form-0-start_time': '10:00',
+            'form-0-end_time': '12:00',
+        }
+        response = self.client.post(self.url, data)
+        self.assertContains(response, '時間が重なってるみたい')
+        self.assertEqual(Schedule.objects.filter(user=self.user).count(), 1)
+
+
+
+
+
+
 class ScheduleEditFormTest(TestCase):
     def setUp(self):
         self.user = UserFactory()
