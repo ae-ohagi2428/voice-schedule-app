@@ -588,10 +588,18 @@ class ScheduleEditViewTest(TestCase):
         self.assertContains(response, '時間が重なってるみたい')
         self.assertEqual(Schedule.objects.filter(user=self.user).count(), 1)
 
-
-
-
-
+    def test_shows_auto_shift_button(self):
+        # 編集画面に、時刻をまとめて変更するためのボタンが置かれている
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(user=self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='WEB会議',
+            start_at=today.replace(hour=13),
+            end_at=today.replace(hour=14),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, 'class="auto-shift-btn')
 
 class ScheduleEditFormTest(TestCase):
     def setUp(self):
@@ -617,7 +625,6 @@ class ScheduleEditFormTest(TestCase):
         self.assertEqual(start_time, time(10, 0))
         self.assertEqual(end_date, today)
         self.assertEqual(end_time, time(11, 0))
-
 
     def test_save_moves_end_to_next_day(self):
         # 終了が前なら翌日になる

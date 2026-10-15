@@ -9,7 +9,7 @@ def iso(hour, minute=0):
     # 今日の日付の時刻を、セッションと同じ文字の形にする
     return today.replace(hour=hour, minute=minute, second=0, microsecond=0).isoformat()
 
-# 5件とも同じ「今の予定」から始める
+# 1~7件目は同じ「今の予定」から始める
 base_schedules = [
     {'title': '散歩', 'start_at': iso(10), 'end_at': iso(11)},
     {'title': '昼ごはん', 'start_at': iso(12), 'end_at': iso(13)},
@@ -22,11 +22,20 @@ sample_text = [
     '勉強はやめる',
     '5時から買い物も入れて1時間',
     '散歩じゃなくてジョギング',
+    '昼ごはんから後を30分ずらして',
+    '11時以降を1時間早めて',
+    '読書を1時間遅らせて',
+
 ]
 
-now_time = ['09:00'] * 5
+now_time = ['09:00'] * 8
 
-current_schedules = [base_schedules] * 5
+night_schedules = [
+    {'title': '散歩', 'start_at': iso(10), 'end_at': iso(11)},
+    {'title': '読書', 'start_at': iso(23), 'end_at': iso(23, 45)},
+]
+
+current_schedules = [base_schedules] * 7 + [night_schedules]
 
 correct_output = [
     {
@@ -62,6 +71,26 @@ correct_output = [
             {'title': 'ジョギング', 'start': '10:00', 'end': '11:00', 'duration_minutes': None},
             {'title': '昼ごはん', 'start': '12:00', 'end': '13:00', 'duration_minutes': None},
             {'title': '勉強', 'start': '14:00', 'end': '16:00', 'duration_minutes': None},
+        ]
+    },
+    {
+        'schedules': [
+            {'title': '散歩', 'start': '10:00', 'end': '11:00', 'duration_minutes': None},
+            {'title': '昼ごはん', 'start': '12:30', 'end': '13:30', 'duration_minutes': None},
+            {'title': '勉強', 'start': '14:30', 'end': '16:30', 'duration_minutes': None},
+        ]
+    },
+    {
+        'schedules': [
+            {'title': '散歩', 'start': '10:00', 'end': '11:00', 'duration_minutes': None},
+            {'title': '昼ごはん', 'start': '11:00', 'end': '12:00', 'duration_minutes': None},
+            {'title': '勉強', 'start': '13:00', 'end': '15:00', 'duration_minutes': None},
+        ]
+    },
+    {
+        'schedules': [
+            {'title': '散歩', 'start': '10:00', 'end': '11:00', 'duration_minutes': None},
+            {'title': '読書', 'start': '23:00', 'end': '23:45', 'duration_minutes': None},
         ]
     },
 ]

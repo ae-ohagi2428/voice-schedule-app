@@ -43,10 +43,51 @@
 </div>
 
 <script>
+  function toMinutes(time) {
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  }
+  function toTimeString(minutes) {
+    const total = ((minutes % 1440) + 1440) % 1440; 
+    const h = Math.floor(minutes / 60) % 24;
+    const m = total % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  function shiftRows(base, minutes, excludeRow) {
+    const rows = document.querySelectorAll('.schedule-row:not(.hidden)');
+    const targets = Array.from(rows).filter((row) => {
+      const startInput = row.querySelector('input[name$="-start_time"]');
+      return row !== excludeRow && startInput.value && toMinutes(startInput.value) >= base;
+    });
+    const outOfRange = targets.some((row) => {
+      const startInput = row.querySelector('input[name$="-start_time"]');
+      const newStart = toMinutes(startInput.value) + minutes;
+      return newStart < 0 || newStart >= 1440;
+    });
+    if (outOfRange) {
+      showToast('日付が変わっちゃうから、ずらせないよ', 'error');
+      return false;
+    }
+    targets.forEach((row) => {
+      const startInput = row.querySelector('input[name$="-start_time"]');
+      const endInput = row.querySelector('input[name$="-end_time"]');
+      startInput.value = toTimeString(toMinutes(startInput.value) + minutes);
+      if (endInput.value) {
+        endInput.value = toTimeString(toMinutes(endInput.value) + minutes);
+      }
+      startInput.defaultValue = startInput.value;
+      endInput.defaultValue = endInput.value;
+      row.querySelector('.auto-shift-btn').classList.add('hidden');
+    });
+    return true;
+  }
+
   const form = document.getElementById('edit-form');
+
   form.addEventListener('click', (event) => {
     const addBtn = event.target.closest('.add-btn');
     const deleteBtn = event.target.closest('.delete-btn');
+    const autoShiftBtn = event.target.closest('.auto-shift-btn');
     if (addBtn) {
       const totalInput = document.getElementById('id_form-TOTAL_FORMS');
       const index = Number(totalInput.value);
@@ -65,8 +106,63 @@
         row.classList.add('hidden');
       }
     }
+    if (autoShiftBtn) {
+      const row = autoShiftBtn.closest('.schedule-row');
+      const startInput = row.querySelector('input[name$="-start_time"]');
+      const endInput = row.querySelector('input[name$="-end_time"]');
+      const minutes = Number(autoShiftBtn.dataset.minutes);
+      const base = toMinutes(endInput.defaultValue);
+      const ok = shiftRows(base, minutes, row);
+      if (ok) {
+        startInput.defaultValue = startInput.value;
+        endInput.defaultValue = endInput.value;
+        autoShiftBtn.classList.add('hidden');
+      }
+    }
   });
+
+  form.addEventListener('change', (event) => {
+    const input = event.target;
+    if (!input.name.endsWith('-start_time') && !input.name.endsWith('-end_time')) {
+      return;
+    }
+
+    const row = input.closest('.schedule-row');
+    const startInput = row.querySelector('input[name$="-start_time"]');
+    const endInput = row.querySelector('input[name$="-end_time"]');
+    
+    if (!endInput.defaultValue || !startInput.value || !endInput.value) {
+      return;
+    }
+
+    const startDiff = toMinutes(startInput.value) - toMinutes(startInput.defaultValue);
+    const endDiff = toMinutes(endInput.value) - toMinutes(endInput.defaultValue);
+    let minutes;
+    if (endDiff !== 0) {
+      minutes = endDiff;
+    } else {
+      minutes = startDiff;
+    }
+
+    const autoShiftBtn = row.querySelector('.auto-shift-btn');
+    if (minutes === 0) {
+      autoShiftBtn.classList.add('hidden');
+    } else {
+      autoShiftBtn.dataset.minutes = minutes;
+      if (minutes > 0) {
+        autoShiftBtn.textContent = `以降の予定も${minutes}分繰り下げる`;
+      } else {
+        autoShiftBtn.textContent = `以降の予定も${-minutes}分前倒しする`;
+      }
+      autoShiftBtn.classList.remove('hidden');
+    }
+  });
+  
   const restartBtn = document.getElementById('restart-btn');
+  const restartDialog = document.getElementById('restart-dialog');
+  const restartNewBtn = document.getElementById('restart-new-btn');
+  const clearForm = document.getElementById('clear-form');
+  const restartCancelBtn = document.getElementById('restart-cancel-btn');
   if (restartBtn) {
     restartBtn.addEventListener('click', () => {
       const num = Number(restartBtn.dataset.savedCount);
@@ -80,11 +176,6 @@
       }
     });
   }
-  const restartDialog = document.getElementById('restart-dialog');
-  const restartNewBtn = document.getElementById('restart-new-btn');
-  const clearForm = document.getElementById('clear-form');
-  const restartCancelBtn = document.getElementById('restart-cancel-btn');
-
   clearForm.addEventListener('submit', (event) => {
     const ok = confirm('今日の予定を全て削除して、入力ページに戻ってよいですか？');
     if (!ok) {
@@ -103,8 +194,5 @@
   restartCancelBtn.addEventListener('click', () => {
     restartDialog.close();
   });
-
-  
-
 </script>
 {% endblock %}
