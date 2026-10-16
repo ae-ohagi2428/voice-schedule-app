@@ -870,3 +870,97 @@ class ScheduleClearViewTest(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 405)
         self.assertTrue(Schedule.objects.filter(pk=schedule.pk).exists())
+
+class DashBoardViewTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.url = reverse('schedules:dashboard')
+
+    def test_shows_today_own_schedules_in_order(self):
+        # 今日の自分の予定が、開始時刻の順にschedulesに入る(ほかの日・ほかの人の予定は入らない)
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='統計の学習',
+            start_at=today.replace(hour=13),
+            end_at=today.replace(hour=16)
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='布団を干す',
+            start_at=today.replace(hour=9),
+            end_at=today.replace(hour=11)
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='昼ごはん',
+            start_at=today.replace(hour=12),
+            end_at=today.replace(hour=13)
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='実家の掃除',
+            start_at=today.replace(hour=9) - timedelta(days=1),
+            end_at=today.replace(hour=15) - timedelta(days=1)
+        )
+        other_user = UserFactory()
+        ScheduleFactory(
+            user=other_user,
+            title='会議',
+            start_at=today.replace(hour=15),
+            end_at=today.replace(hour=16)
+        )
+        response = self.client.get(self.url)
+        titles = [s.title for s in response.context['schedules']]
+        self.assertEqual(titles, ['布団を干す', '昼ごはん', '統計の学習'])
+    
+    def test_current_schedule(self):
+        # 進行中の予定がcurrent_scheduleに入り、画面に「いま」という文字が表示される
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        schedule = ScheduleFactory(
+            user=self.user, title='散歩',
+            start_at=now - timedelta(minutes=30),
+            end_at=now + timedelta(minutes=30)
+        )
+        response = self.client.get(self.url)
+        self.assertEqual(response.context['current_schedule'], schedule)
+        self.assertContains(response, '<span class="next-bar-time">いま')
+    
+    def test_next_schedule(self):
+        # 進行中の予定がない場合、次の予定がnext_scheduleに入り、画面に「つぎ」という文字が表示される
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        schedule = ScheduleFactory(
+            user=self.user, title='買い物',
+            start_at=now + timedelta(minutes=30),
+            end_at=now + timedelta(minutes=90)
+        )
+        response = self.client.get(self.url)
+        self.assertEqual(response.context['next_schedule'], schedule)
+        self.assertContains(response, '<span class="next-bar-time">つぎ')
+        self.assertContains(response, '買い物')
+    
+    def test_all_schedules_finished(self):
+        # 予定が全て完了している場合、画面に「今日の予定は全部おわったよ」という文字が表示される
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user, title='ショッピング',
+            start_at=now - timedelta(minutes=90),
+            end_at=now - timedelta(minutes=30)
+        )
+        response = self.client.get(self.url)
+        self.assertIsNone(response.context['next_schedule'])
+        self.assertIsNone(response.context['current_schedule'])
+        self.assertContains(response, '今日の予定は全部おわったよ')
+    
+    def test_no_schedules(self):
+        # 今日の予定が登録されていない場合、画面に「まだ予定がないよ」という文字が表示される
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertIsNone(response.context['next_schedule'])
+        self.assertIsNone(response.context['current_schedule'])
+        self.assertContains(response, 'まだ予定がないよ')
+        self.assertContains(response, '＋ボタンから予定を追加してみよう！')

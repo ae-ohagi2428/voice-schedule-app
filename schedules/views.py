@@ -25,7 +25,17 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['today'] = timezone.localdate()
+        today = timezone.localdate()
+        context['today'] = today
+        schedules = Schedule.objects.filter(user=self.request.user, start_at__date=today).order_by('start_at')
+        context['schedules'] = schedules
+
+        now = timezone.now()
+        current_schedule = schedules.filter(start_at__lte=now, end_at__gt=now).first()
+        next_schedule = schedules.filter(start_at__gt=now).first()
+        context['current_schedule'] = current_schedule
+        context['next_schedule'] = next_schedule
+
         return context
 
 

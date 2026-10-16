@@ -7,19 +7,36 @@
 <div class="px-[18px] pt-4 flex items-end justify-between">
   <div class="flex flex-col gap-1">
     <h1 class="page-title">きょうの計画</h1>
-    <p class="page-sub">{{ today|date:"n月j日（D）" }}・まだ予定がありません</p>
+    <p class="page-sub">{{ today|date:"n月j日（D）" }}</p>
   </div>
 </div>
-
+{% include 'schedules/_schedule_list.html' %}
 <div class="char-zone mx-3 mt-4 mb-3 h-[380px]">
   <div class="next-bar absolute top-[14px] left-[14px] right-[14px] z-10">
-    <span class="next-bar-time">つぎ</span>
-    <span class="next-bar-title">まだ予定がありません</span>
+    {% if current_schedule %}
+      <span class="next-bar-time">いま</span>
+      <span class="next-bar-title">
+        {{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }} {{ current_schedule.title }}
+      </span>
+    {% elif next_schedule %}
+      <span class="next-bar-time">つぎ</span>
+      <span class="next-bar-title">
+        {{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }} {{ next_schedule.title }}
+      </span>
+    {% elif schedules %}
+      <span class="next-bar-time">つぎ</span>
+      <span class="next-bar-title">今日の予定は全部おわったよ</span>
+    {% else %}
+      <span class="next-bar-time">つぎ</span>
+      <span class="next-bar-title">まだ予定がないよ</span>
+    {% endif %}
   </div>
-
-  <div class="bubble absolute top-[62px] left-4 z-10 max-w-[190px]">
+  
+  {% if not schedules %}
+    <div class="bubble absolute top-[62px] left-4 z-10 max-w-[190px]">
       ＋ボタンから予定を追加してみよう！
-  </div>
+    </div>
+  {% endif %}
 
   <image src="{% static 'images/character_studying.png' %}" alt="るるる"
     class="char-figure w-[300px] h-[300px] -translate-x-6">
