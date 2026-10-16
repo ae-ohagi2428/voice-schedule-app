@@ -20,6 +20,7 @@ from .ai import ScheduleItem, ScheduleList
 from .factories import ScheduleFactory
 from .forms import ScheduleEditForm
 from .models import Schedule
+from .status import get_schedule_status
 from .usage import get_today_usage
 
 NOW = timezone.make_aware(datetime(2026, 10, 1, 15, 5))
@@ -964,3 +965,116 @@ class DashBoardViewTest(TestCase):
         self.assertIsNone(response.context['current_schedule'])
         self.assertContains(response, 'まだ予定がないよ')
         self.assertContains(response, '＋ボタンから予定を追加してみよう！')
+
+class ScheduleStatusTest(TestCase):
+    def setUp(self):
+        self.now = timezone.now()
+        self.user = UserFactory()
+    
+    def test_no_schedules_returns_none(self):
+        # 予定がない場合はstateが'none'になる
+        schedules = Schedule.objects.filter(user=self.user).order_by('start_at')
+        state, current_schedule, next_schedule = get_schedule_status(schedules, self.now)
+        self.assertEqual(state, 'none')
+
+    def test_current_schedule_returns_running(self):
+        # 予定を実行中の場合はstateが'running'になる
+        ScheduleFactory(
+            user=self.user,
+            title='模様替え',
+            start_at=self.now - timedelta(minutes=60),
+            end_at=self.now + timedelta(minutes=60)
+        )
+        schedules = Schedule.objects.filter(user=self.user).order_by('start_at')
+        state, current_schedule, next_schedule = get_schedule_status(schedules, self.now)
+        self.assertEqual(state, 'running')
+
+    def test_starts_within_15_minutes_returns_soon(self):
+        # 予定がもうすぐ始まる場合はstateが'soon'になる
+        ScheduleFactory(
+            user=self.user,
+            title='メールチェック・返信',
+            start_at=self.now + timedelta(minutes=10),
+            end_at=self.now + timedelta(minutes=30)
+        )
+        schedules = Schedule.objects.filter(user=self.user).order_by('start_at')
+        state, current_schedule, next_schedule = get_schedule_status(schedules, self.now)
+        self.assertEqual(state, 'soon')
+        
+    def test_starts_after_15_minutes_returns_waiting(self):
+        # 予定がまだ始まらない場合にはstateが'waiting'になる
+        ScheduleFactory(
+            user=self.user,
+            title='玄関の掃除',
+            start_at=self.now + timedelta(minutes=30),
+            end_at=self.now + timedelta(minutes=45)
+        )
+        schedules = Schedule.objects.filter(user=self.user).order_by('start_at')
+        state, current_schedule, next_schedule = get_schedule_status(schedules, self.now)
+        self.assertEqual(state, 'waiting')
+
+    def test_all_schedules_ended_returns_finished(self):
+        # 全ての予定が終了した場合にはstateが'finished'になる
+        ScheduleFactory(
+            user=self.user,
+            title='ピラティス',
+            start_at=self.now - timedelta(minutes=90),
+            end_at=self.now - timedelta(minutes=10)
+        )
+        schedules = Schedule.objects.filter(user=self.user).order_by('start_at')
+        state, current_schedule, next_schedule = get_schedule_status(schedules, self.now)
+        self.assertEqual(state, 'finished')
+
+class TaskRunViewTest(TestCase):
+    def setUp(self):
+        self.now = timezone.now()
+        self.user = UserFactory()
+        self.url = reverse('schedules:task_run')
+
+    def test_running_shows_current_schedule(self):
+        # stateが'running'（実行中のタスクがある）の場合、実行画面に実行中のタスク名が表示される
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='弁当作り',
+            start_at=self.now - timedelta(minutes=10),
+            end_at=self.now + timedelta(minutes=10)
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, '弁当作り')
+
+    def test_waiting_shows_start_now_button(self):
+        # stateが'soon'か'waiting'（開始待ち）の場合、
+        # 「◯分後にはじまるよ」の文字と「今すぐ始める」ボタンが表示される
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='庭の手入れ',
+            start_at=self.now + timedelta(minutes=10),
+            end_at=self.now + timedelta(minutes=30)
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, '10分後にはじまるよ')
+        self.assertContains(response, 'id="start-now-btn"')
+
+    def test_finished_shows_back_button(self):
+        # stateが'finished'（全てのタスクが終了済み）の場合、
+        # 「今日の予定は全部おわったよ」の文字と「ダッシュボードにもどる」ボタンが表示される
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='ごみ出し',
+            start_at=self.now - timedelta(minutes=10),
+            end_at=self.now - timedelta(minutes=5)
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, '今日の予定は全部おわったよ')
+        self.assertContains(response, 'ダッシュボードにもどる')     
+
+    def test_no_schedules_shows_back_button(self):
+        # stateが'none'（予定なし）の場合、
+        # 「まだ予定が入ってないよ」の文字と「ダッシュボードにもどる」ボタンが出る
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'まだ予定が入ってないよ')
+        self.assertContains(response, 'ダッシュボードにもどる')
