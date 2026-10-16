@@ -1,4 +1,5 @@
 import json
+import math
 from datetime import datetime
 
 import openai
@@ -17,6 +18,7 @@ from .ai import ask_ai
 from .formatting import format_schedules
 from .forms import BaseScheduleFormSet, ScheduleEditForm
 from .models import Schedule
+from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
 
 
@@ -31,8 +33,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['schedules'] = schedules
 
         now = timezone.now()
-        current_schedule = schedules.filter(start_at__lte=now, end_at__gt=now).first()
-        next_schedule = schedules.filter(start_at__gt=now).first()
+        state, current_schedule, next_schedule = get_schedule_status(schedules, now)
+        context['state'] = state
         context['current_schedule'] = current_schedule
         context['next_schedule'] = next_schedule
 
@@ -187,6 +189,25 @@ class ScheduleClearView(LoginRequiredMixin, View):
 class TaskRunView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/task_run.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.localdate()
+        schedules = Schedule.objects.filter(
+            user=self.request.user, start_at__date=today
+        ).order_by('start_at')
+        context['schedules'] = schedules
+
+        now = timezone.now()
+        state, current_schedule, next_schedule = get_schedule_status(schedules, now)
+        context['state'] = state
+        context['current_schedule'] = current_schedule
+        context['next_schedule'] = next_schedule
+        minutes_until = None
+        if next_schedule:
+            minutes_until = math.ceil((next_schedule.start_at - now).total_seconds() / 60)
+        context['minutes_until'] = minutes_until
+
+        return context
 
 # TODO: 設定画面の Issue で UpdateView に作り替える
 class SettingsView(LoginRequiredMixin, TemplateView):
