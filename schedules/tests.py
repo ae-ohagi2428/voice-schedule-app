@@ -1042,10 +1042,11 @@ class TaskRunViewTest(TestCase):
         )
         response = self.client.get(self.url)
         self.assertContains(response, '弁当作り')
+        self.assertEqual(response.context['state'], 'running')
 
     def test_waiting_shows_start_now_button(self):
         # stateが'soon'か'waiting'（開始待ち）の場合、
-        # 「◯分後にはじまるよ」の文字と「今すぐ始める」ボタンが表示される
+        # 「今すぐ始める」ボタンが表示される
         self.client.force_login(self.user)
         ScheduleFactory(
             user=self.user,
@@ -1054,7 +1055,7 @@ class TaskRunViewTest(TestCase):
             end_at=self.now + timedelta(minutes=30)
         )
         response = self.client.get(self.url)
-        self.assertContains(response, '10分後にはじまるよ')
+        self.assertEqual(response.context['state'], 'soon')
         self.assertContains(response, 'id="start-now-btn"')
 
     def test_finished_shows_back_button(self):
@@ -1069,7 +1070,8 @@ class TaskRunViewTest(TestCase):
         )
         response = self.client.get(self.url)
         self.assertContains(response, '今日の予定は全部おわったよ')
-        self.assertContains(response, 'ダッシュボードにもどる')     
+        self.assertContains(response, 'ダッシュボードにもどる')
+        self.assertEqual(response.context['state'], 'finished')
 
     def test_no_schedules_shows_back_button(self):
         # stateが'none'（予定なし）の場合、
@@ -1078,3 +1080,89 @@ class TaskRunViewTest(TestCase):
         response = self.client.get(self.url)
         self.assertContains(response, 'まだ予定が入ってないよ')
         self.assertContains(response, 'ダッシュボードにもどる')
+        self.assertEqual(response.context['state'], 'none')
+
+class StartNowViewTest(TestCase):
+    def setUp(self):
+        self.now = timezone.now()
+        self.user = UserFactory()
+        self.url = reverse('schedules:start_now')
+
+    def test_starts_next_schedule_now(self):
+        # 次の予定のidを送ると、その予定の開始時刻が今の時刻に上書きされる
+        self.client.force_login(self.user)
+        schedule = ScheduleFactory(
+            user=self.user,
+            title='風呂の掃除',
+            start_at=self.now + timedelta(minutes=20),
+            end_at=self.now + timedelta(minutes=40),
+        )
+        response = self.client.post(self.url, {'id': schedule.pk}, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        schedule.refresh_from_db()
+        self.assertGreaterEqual(schedule.start_at, self.now)
+        self.assertLess(schedule.start_at, self.now + timedelta(minutes=1))
+
+    def test_rejects_schedule_that_is_not_next(self):
+        # 次の予定以外のidを入れた場合、400エラーとなり時刻は上書きされない
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='ドラッグストアへ行く',
+            start_at=self.now + timedelta(minutes=20),
+            end_at=self.now + timedelta(minutes=40),
+        )
+        schedule = ScheduleFactory(
+            user=self.user,
+            title='来客対応',
+            start_at=self.now + timedelta(minutes=60),
+            end_at=self.now + timedelta(minutes=90)
+        )
+        original_start_at = schedule.start_at
+        response = self.client.post(self.url, {'id': schedule.pk}, content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        schedule.refresh_from_db()
+        self.assertEqual(schedule.start_at, original_start_at)
+
+    def test_rejects_while_running(self):
+        # 実行中の予定がある時に「今すぐ始める」を送った場合でも処理されず、次の予定の時刻は変わらない
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='メール確認',
+            start_at=self.now - timedelta(minutes=10),
+            end_at=self.now + timedelta(minutes=10)
+        )
+        schedule = ScheduleFactory(
+            user=self.user,
+            title='書類確認',
+            start_at=self.now + timedelta(minutes=20),
+            end_at=self.now + timedelta(minutes=40)
+        )
+        original_start_at = schedule.start_at
+        response = self.client.post(self.url, {'id': schedule.pk}, content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        schedule.refresh_from_db()
+        self.assertEqual(schedule.start_at, original_start_at)
+
+    def test_rejects_other_users_schedule(self):
+        # 他の利用者の予定idを送った場合でも、処理されず、データが書き換わらない
+        self.client.force_login(self.user)
+        other_user = UserFactory()
+        schedule = ScheduleFactory(
+            user=other_user,
+            title='郵便局へ行く',
+            start_at=self.now + timedelta(minutes=20),
+            end_at=self.now + timedelta(minutes=40)
+        )
+        original_start_at = schedule.start_at
+        response = self.client.post(self.url, {'id': schedule.pk}, content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        schedule.refresh_from_db()
+        self.assertEqual(schedule.start_at, original_start_at)
+        
+
+    def test_redirects_when_not_logged_in(self):
+        # ユーザーがログインしていない場合はリダイレクトされる
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 302)

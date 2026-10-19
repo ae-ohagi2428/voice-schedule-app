@@ -1,9 +1,9 @@
 import json
-import math
 from datetime import datetime
 
 import openai
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import modelformset_factory
 from django.http import JsonResponse
@@ -197,17 +197,42 @@ class TaskRunView(LoginRequiredMixin, TemplateView):
         ).order_by('start_at')
         context['schedules'] = schedules
 
+        schedules_list = []
+        for schedule in schedules:
+            s = {
+                'id': schedule.pk,
+                'title': schedule.title,
+                'start_at': schedule.start_at,
+                'end_at': schedule.end_at,
+            }
+            schedules_list.append(s)
+        context['schedules_list'] = schedules_list
+
         now = timezone.now()
         state, current_schedule, next_schedule = get_schedule_status(schedules, now)
         context['state'] = state
         context['current_schedule'] = current_schedule
         context['next_schedule'] = next_schedule
-        minutes_until = None
-        if next_schedule:
-            minutes_until = math.ceil((next_schedule.start_at - now).total_seconds() / 60)
-        context['minutes_until'] = minutes_until
-
         return context
+
+class StartNowView(LoginRequiredMixin, View):
+    def post(self, request):
+        today = timezone.localdate()
+        data = json.loads(request.body)
+        schedule_id = data['id']
+        schedules = Schedule.objects.filter(
+            user=self.request.user, start_at__date=today
+        ).order_by('start_at')
+
+        now = timezone.now()
+        state, current_schedule, next_schedule = get_schedule_status(schedules, now)
+        if state == 'waiting' or state == 'soon':
+            if schedule_id == next_schedule.pk:
+                next_schedule.start_at = now
+                next_schedule.save()
+                return JsonResponse({'start_at': next_schedule.start_at})
+        messages.error(request, '予定が変わっていたので、表示しなおしたよ。もう一度試してみてね')
+        return JsonResponse({}, status=400)
 
 # TODO: 設定画面の Issue で UpdateView に作り替える
 class SettingsView(LoginRequiredMixin, TemplateView):

@@ -6,6 +6,7 @@ from .views import (
     ScheduleEditView,
     ScheduleInputView,
     SettingsView,
+    StartNowView,
     TaskRunView,
     TranscriptView,
 )
@@ -18,6 +19,7 @@ urlpatterns = [
     path('edit/', ScheduleEditView.as_view(), name='edit'),
     path('clear/', ScheduleClearView.as_view(), name='clear'),
     path('task_run/', TaskRunView.as_view(), name='task_run'),
+    path('task_run/start_now/', StartNowView.as_view(), name='start_now'),
     path('settings/', SettingsView.as_view(), name='settings'),
     path('input/transcript/', TranscriptView.as_view(), name='transcript'),
 ]

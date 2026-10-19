@@ -1,25 +1,35 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}タスク実行ページ{% endblock %}
 
 {% block content %}
-<h1>いまの予定</h1>
+<h1 class="text-center">タスクを進める</h1>
 
-{% if state == 'running' %}
-  {{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}
-  {{ current_schedule.title }}
-{% elif state == 'waiting' or state == 'soon' %}
-  {{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }}
-  {{ next_schedule.title }}
-  <p>{{ minutes_until }}分後にはじまるよ</p>
-  <button type="button" id="start-now-btn" class="btn-primary w-full">今すぐ始める</button>
-{% elif state == 'finished' %}
+{{ schedules_list|json_script:"schedules-data" }}
+
+<div id="state-running" class="{% if state != 'running' %}hidden {% endif %}">
+    <span id="running-time">{{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}</span>
+    <span id="running-title">{{ current_schedule.title }}</span>
+</div>
+<div id="state-waiting" class="{% if state != 'waiting' and state != 'soon' %}hidden {% endif %}">
+  <p>つぎの予定</p>
+  <span id="waiting-time">{{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }}</span>
+  <span id="waiting-title">{{ next_schedule.title }}</span>
+  {% csrf_token %}
+    <button type="button" id="start-now-btn" class="btn-primary w-full mt-3"
+      data-start-now-url="{% url 'schedules:start_now' %}">今すぐ始める
+    </button>
+</div>
+<div id="state-finished" class="{% if state != 'finished' %}hidden {% endif %}">
   <p>今日の予定は全部おわったよ</p>
-{% else %}
-  <p>まだ予定が入ってないよ。</p>
-{% endif %}
-{% if state == 'finished' or state == 'none' %}
   <a href="{% url 'schedules:dashboard' %}" class="btn-secondary w-full">ダッシュボードにもどる</a>
-{% endif %}
-
+</div>
+<div id="state-none" class="{% if state != 'none' %}hidden {% endif %}">
+  <p>まだ予定が入ってないよ</p>
+  <a href="{% url 'schedules:dashboard' %}" class="btn-secondary w-full">ダッシュボードにもどる</a>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'schedules/js/task_run.js' %}"></script>
 {% endblock %}
