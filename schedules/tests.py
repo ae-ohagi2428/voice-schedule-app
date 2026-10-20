@@ -602,6 +602,12 @@ class ScheduleEditViewTest(TestCase):
         response = self.client.get(self.url)
         self.assertContains(response, 'class="auto-shift-btn')
 
+    def test_page_is_not_cached(self):
+        # 編集ページではブラウザにキャッシュさせず、ブラウザの「戻る」が押された場合でも古い画面を表示しない
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertIn('no-cache', response['Cache-Control'])
+
 class ScheduleEditFormTest(TestCase):
     def setUp(self):
         self.user = UserFactory()
@@ -1108,6 +1114,13 @@ class TaskRunViewTest(TestCase):
         )
         response = self.client.get(self.url)
         self.assertEqual(response.context['settings_data'], {'time_left_alert': False, 'alert_interval': 5})
+
+            
+    def test_shows_link_to_edit_page(self):
+        # 実行ページ内に編集ページへのリンクがある
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, f'href="{reverse("schedules:edit")}"')
 
 class StartNowViewTest(TestCase):
     def setUp(self):
