@@ -8,6 +8,15 @@
 
 {{ schedules_list|json_script:"schedules-data" }}
 
+{{ settings_data|json_script:"settings-data" }}
+<button type="button" id="character" class="mx-auto block">
+  <img src="{% static 'images/character_magic.png' %}" alt="るるると魔法のステッキ"
+    class="w-32 h-auto">
+</button>
+<p id="speech-bubble" class="{% if state == 'finished' or state == 'none' %}hidden{% endif %}">
+  るるるをタップしてね。声で予定をおしらせするよ！
+</p>
+
 <div id="state-running" class="{% if state != 'running' %}hidden {% endif %}">
     <span id="running-time">{{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}</span>
     <span id="running-title">{{ current_schedule.title }}</span>
