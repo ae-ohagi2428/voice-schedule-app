@@ -17,6 +17,13 @@ const startNowBtn = document.getElementById('start-now-btn');
 const startNowUrl = startNowBtn.dataset.startNowUrl;
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+const settings = JSON.parse(document.getElementById('settings-data').textContent);
+const characterBtn = document.getElementById('character');
+const speechBubbleEl = document.getElementById('speech-bubble');
+let voiceEnabled = false;
+let previousStatus = null;
+let lastRemainingMinutes = null;
+
 function getScheduleStatus(schedules, now) {
     const currentSchedule = schedules.find((schedule) =>
         schedule.start_at <= now && schedule.end_at > now
@@ -34,13 +41,26 @@ function getScheduleStatus(schedules, now) {
     } else {
         state = 'none';
     }
-    return {state, currentSchedule, nextSchedule};
+    let remainingMinutes = null;
+    if (currentSchedule) {
+        remainingMinutes = Math.ceil((currentSchedule.end_at - now) / 60000);
+    }
+    return {state, currentSchedule, nextSchedule, remainingMinutes};
 }
 
 function formatTime(date) {
     const hours = date.getHours();
     const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
+}
+
+function formatSpokenTime(date) {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    if (minutes === 0) {
+        return `${hours}時`;
+    }
+    return `${hours}時${minutes}分`;
 }
 
 function renderStatus(status) {
@@ -67,15 +87,11 @@ function renderStatus(status) {
 function checkStatus() {
     const now = new Date();
     const status = getScheduleStatus(schedules, now);
-    return renderStatus(status);
+    renderStatus(status);
+    announceChange(previousStatus, status);
+    announceRemaining(previousStatus, status);
+    previousStatus = status;
 }
-
-setInterval(checkStatus, 1000);
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        checkStatus();
-    }
-});
 
 async function startNow() {
     const status = getScheduleStatus(schedules, new Date());
@@ -103,4 +119,75 @@ async function startNow() {
         showToast('通信がうまくいかなかったよ。もう一度押してみてね');
     }
 }
+
+function speak(text) {
+    if (!voiceEnabled) {
+        return;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ja-JP';
+    utterance.onstart = () => {
+        speechBubbleEl.textContent = text;
+    };
+    speechSynthesis.speak(utterance);
+}
+
+function startVoice() {
+    const now = new Date();
+    const status = getScheduleStatus(schedules, now);
+    if (status.state === 'finished' || status.state === 'none') {
+        return;
+    }
+    voiceEnabled = true;
+    speak('いっしょにがんばろう');
+    if (status.state === 'running') {
+        speak(`今は${status.currentSchedule.title}の時間だよ。残りあと${status.remainingMinutes}分だよ`);
+    } else if (status.state === 'waiting') {
+        speak(`次の予定は${formatSpokenTime(status.nextSchedule.start_at)}から${status.nextSchedule.title}だよ`);
+    }
+}
+
+function announceChange(previous, current) {
+    if (previous == null) {
+        return;
+    } else if (previous.currentSchedule && previous.currentSchedule !== current.currentSchedule ) {
+        if (current.state === 'running') {
+            speak(`${previous.currentSchedule.title}の終了時間だよ。次は${current.currentSchedule.title}のタスクをはじめるよ！`);
+        } else if (current.state === 'waiting') {
+            speak(`${previous.currentSchedule.title}の終了時間だよ。次は${formatSpokenTime(current.nextSchedule.start_at)}から${current.nextSchedule.title}だよ`);
+        } else if (current.state === 'finished') {
+            speak(`${previous.currentSchedule.title}の終了時間だよ！今日のタスクはこれでおしまい。おつかれさまでした`);
+        }
+        return;
+    } else if (!previous.currentSchedule && current.currentSchedule) {
+        speak(`${current.currentSchedule.title}をはじめるよ`);
+    }
+}
+
+function announceRemaining(previous, current) {
+    if (!settings.time_left_alert) {
+        return;
+    } else if (previous == null) {
+        return;
+    } else if (current.state !== 'running') {
+        return;
+    } else if (previous.currentSchedule !== current.currentSchedule) {
+        return;
+    } else if (previous.remainingMinutes === current.remainingMinutes) {
+        return;
+    }
+    if (current.remainingMinutes % settings.alert_interval === 0) {
+        speak(`${current.currentSchedule.title}の残り時間はあと${current.remainingMinutes}分だよ`);
+    }
+}
+
+setInterval(checkStatus, 1000);
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        checkStatus();
+    }
+});
+
 startNowBtn.addEventListener('click', startNow);
+
+characterBtn.addEventListener('click', startVoice);

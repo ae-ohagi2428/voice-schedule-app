@@ -17,7 +17,7 @@ from pydantic import ValidationError
 from .ai import ask_ai
 from .formatting import format_schedules
 from .forms import BaseScheduleFormSet, ScheduleEditForm
-from .models import Schedule
+from .models import Schedule, Setting
 from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
 
@@ -213,6 +213,13 @@ class TaskRunView(LoginRequiredMixin, TemplateView):
         context['state'] = state
         context['current_schedule'] = current_schedule
         context['next_schedule'] = next_schedule
+
+        setting, created = Setting.objects.get_or_create(user=self.request.user)
+        settings_data = {
+            'time_left_alert': setting.time_left_alert,
+            'alert_interval': setting.alert_interval,
+        }
+        context['settings_data'] = settings_data
         return context
 
 class StartNowView(LoginRequiredMixin, View):

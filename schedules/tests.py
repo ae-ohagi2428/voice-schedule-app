@@ -19,7 +19,7 @@ from schedules.formatting import (
 from .ai import ScheduleItem, ScheduleList
 from .factories import ScheduleFactory
 from .forms import ScheduleEditForm
-from .models import Schedule
+from .models import Schedule, Setting
 from .status import get_schedule_status
 from .usage import get_today_usage
 
@@ -1081,6 +1081,33 @@ class TaskRunViewTest(TestCase):
         self.assertContains(response, 'まだ予定が入ってないよ')
         self.assertContains(response, 'ダッシュボードにもどる')
         self.assertEqual(response.context['state'], 'none')
+
+    def test_creates_setting_if_not_exists(self):
+        # Settingテーブルにレコードがない利用者が実行画面を開くと、レコードが作られる
+        self.client.force_login(self.user)
+        self.assertEqual(Setting.objects.filter(user=self.user).count(), 0)
+        self.client.get(self.url)
+        self.assertEqual(Setting.objects.filter(user=self.user).count(), 1)
+    
+    def test_settings_data_uses_defaults(self):
+        # 新しいレコードについて、値は初期値（オン・通知間隔15分）となり、初期値がcontextに入る
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(
+            response.context['settings_data'],
+            {'time_left_alert': True, 'alert_interval': 15}
+        )
+
+    def test_settings_data_uses_existing_setting(self):
+        # 既にSettingsテーブルにレコードがある利用者は、その値がcontextに入る
+        self.client.force_login(self.user)
+        Setting.objects.create(
+            user=self.user,
+            time_left_alert=False,
+            alert_interval=5,
+        )
+        response = self.client.get(self.url)
+        self.assertEqual(response.context['settings_data'], {'time_left_alert': False, 'alert_interval': 5})
 
 class StartNowViewTest(TestCase):
     def setUp(self):
