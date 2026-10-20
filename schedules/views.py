@@ -10,7 +10,9 @@ from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.cache import never_cache
 from django.views.generic import TemplateView
 from pydantic import ValidationError
 
@@ -126,7 +128,7 @@ class TranscriptView(LoginRequiredMixin, View):
             'redirect_url': reverse('schedules:edit'), 'remaining': remaining,
             })
 
-
+@method_decorator(never_cache, name='dispatch')
 class ScheduleEditView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/edit.html'
 

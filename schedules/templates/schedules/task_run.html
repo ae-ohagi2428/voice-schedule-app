@@ -38,6 +38,7 @@
   <p>まだ予定が入ってないよ</p>
   <a href="{% url 'schedules:dashboard' %}" class="btn-secondary w-full">ダッシュボードにもどる</a>
 </div>
+<a href="{% url 'schedules:edit' %}" class="btn-secondary w-full">予定をなおす</a>
 {% endblock %}
 {% block scripts %}
 <script src="{% static 'schedules/js/task_run.js' %}"></script>
