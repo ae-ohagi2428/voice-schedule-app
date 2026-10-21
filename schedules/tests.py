@@ -972,6 +972,107 @@ class DashBoardViewTest(TestCase):
         self.assertContains(response, 'まだ予定がないよ')
         self.assertContains(response, '＋ボタンから予定を追加してみよう！')
 
+    def test_gap_minutes_only_between_separated_schedules(self):
+        # 予定と予定の間に空き時間がある場合だけ、gap_minutesに値が入る
+        now = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='打ち合わせ',
+            start_at=now.replace(hour=9),
+            end_at=now.replace(hour=10),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='資料作成',
+            start_at=now.replace(hour=10, minute=30),
+            end_at=now.replace(hour=11),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='研修動画の視聴',
+            start_at=now.replace(hour=11),
+            end_at=now.replace(hour=12),
+        )
+        response = self.client.get(self.url)
+        timeline = response.context['timeline']
+        self.assertEqual(timeline[0].gap_minutes, 30)
+        self.assertFalse(hasattr(timeline[1], 'gap_minutes'))
+        self.assertFalse(hasattr(timeline[2], 'gap_minutes'))
+
+    def test_start_button_shown_when_running_or_waiting(self):
+        # 実行中・待っているときは、バーに実行ページへのリンクが出る
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        schedule = ScheduleFactory(
+            user=self.user,
+            title='データの集計作業',
+            start_at=now - timedelta(minutes=30),
+            end_at=now + timedelta(minutes=30),
+        )
+        response = self.client.get(self.url)
+        task_run_link = f'href="{reverse("schedules:task_run")}"'
+        self.assertContains(response, task_run_link)
+        schedule.delete()
+        ScheduleFactory(
+            user=self.user,
+            title='コードチェック',
+            start_at=now + timedelta(minutes=30),
+            end_at=now + timedelta(minutes=90),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, task_run_link)
+
+    def test_start_button_hidden_when_finished_or_none(self):
+        # 一日終了・予定がないときは、バーに実行ページへのリンクが出ない
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        task_run_link = f'href="{reverse("schedules:task_run")}"'
+        self.assertNotContains(response, task_run_link)
+        ScheduleFactory(
+            user=self.user,
+            title='コードチェック',
+            start_at=now - timedelta(minutes=90),
+            end_at=now - timedelta(minutes=30),
+        )
+        response = self.client.get(self.url)
+        self.assertNotContains(response, task_run_link)
+
+    def test_timeline_now_marked_when_running(self):
+        # 実行中のタスクがある場合、HTMLにid="timeline-now"（実行中タスクの目印）があること
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='統計学の模擬テスト',
+            start_at=now - timedelta(minutes=30),
+            end_at=now + timedelta(minutes=30),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="timeline-now"')
+
+    def test_shows_edit_link_count_and_speech_notice(self):
+        # HTMLに、編集ページへのリンク・その日のタスクの件数・id="speech-unsupported"（音声入力不可時の案内）があること
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='資料の確認',
+            start_at=today.replace(hour=9),
+            end_at=today.replace(hour=10),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='スピーチ練習',
+            start_at=today.replace(hour=13),
+            end_at=today.replace(hour=14),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, f'href="{reverse("schedules:edit")}"')
+        self.assertContains(response, '・2件')
+        self.assertContains(response, 'id="speech-unsupported"')
+
 class ScheduleStatusTest(TestCase):
     def setUp(self):
         self.now = timezone.now()
@@ -1206,3 +1307,18 @@ class StartNowViewTest(TestCase):
         # ユーザーがログインしていない場合はリダイレクトされる
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, 302)
+
+class ScheduleModelTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+
+    def test_duration_minutes_returns_total_minutes(self):
+        # タスクにかかる時間は「分」単位で表される
+        now = timezone.now().replace(minute=0, second=0, microsecond=0)
+        schedule = ScheduleFactory(
+            user=self.user,
+            title='映画鑑賞',
+            start_at=now.replace(hour=13),
+            end_at=now.replace(hour=14, minute=30),
+        )
+        self.assertEqual(schedule.duration_minutes, 90)

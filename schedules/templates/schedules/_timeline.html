@@ -1,0 +1,16 @@
+<div id="timeline" class="max-h-[240px] overflow-y-auto relative px-[18px] flex flex-col gap-[9px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+  <div class="fade-top flex-none z-10"></div>
+  {% for schedule in timeline %}
+    {% include 'schedules/_timeline_row.html' %}
+    {% if schedule.gap_minutes %}
+      <div class="flex gap-[11px] items-center">
+        <div class="w-[42px] flex-none"></div>
+        <div class="h-[18px] flex-none border-l-[3px] border-dotted border-[#E7DFF3]"></div>
+        <span class="text-[10.5px] text-[#8C86A0]">あき {{ schedule.gap_minutes }}分</span>
+      </div>
+    {% endif %}
+  {% empty %}
+    <p class="page-sub text-center">今日の予定はまだありません</p>
+  {% endfor %}
+  <div class="fade-bottom flex-none z-10"></div>
+</div>

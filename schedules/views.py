@@ -35,10 +35,19 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['schedules'] = schedules
 
         now = timezone.now()
+        context['now'] = now
         state, current_schedule, next_schedule = get_schedule_status(schedules, now)
         context['state'] = state
         context['current_schedule'] = current_schedule
         context['next_schedule'] = next_schedule
+
+        timeline = list(schedules)
+        for schedule, following_schedule in zip(timeline, timeline[1:], strict=False):
+            gap_time = following_schedule.start_at - schedule.end_at
+            gap = int(gap_time.total_seconds() / 60)
+            if gap > 0:
+                schedule.gap_minutes = gap
+        context['timeline'] = timeline
 
         return context
 
