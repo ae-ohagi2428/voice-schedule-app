@@ -37,8 +37,12 @@ class Schedule(models.Model):
         ]
     def __str__(self):
         return f"{self.start_at:%m/%d %H:%M} {self.title}"
-    
 
+    @property
+    def duration_minutes(self):
+        duration = self.end_at - self.start_at
+        total_minutes = int(duration.total_seconds() / 60)
+        return total_minutes
 
 class Setting(models.Model):
     user = models.OneToOneField(

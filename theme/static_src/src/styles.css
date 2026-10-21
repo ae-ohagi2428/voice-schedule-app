@@ -85,13 +85,20 @@
     overflow-y: auto;
   }
 
-  /* スクロール領域の下端フェード */
+  /* スクロール領域のフェード */
   .fade-bottom {
     position: sticky;
     bottom: 0;
     height: 26px;
     pointer-events: none;
     background: linear-gradient(180deg, transparent, var(--color-base, #FBF5FA));
+  }
+  .fade-top {
+    position: sticky;
+    top: 0;
+    height: 26px;
+    pointer-events: none;
+    background: linear-gradient(0deg, transparent, var(--color-base, #FBF5FA));
   }
 
   /* ---------- ヘッダー ---------- */
