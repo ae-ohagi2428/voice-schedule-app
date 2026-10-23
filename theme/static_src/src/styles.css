@@ -17,6 +17,16 @@
   50%      { transform: scale(1.06); opacity: 1; }
 }
 
+@keyframes blink {
+  0%, 92%, 100% { opacity: 0; }
+  93%, 98% { opacity: 1; }
+}
+
+@keyframes blink-hide {
+  0%, 92%, 100% { opacity: 1; }
+  93%, 98% { opacity: 0; }
+}
+
 /* ============================================================
    ベース
    ============================================================ */
@@ -629,6 +639,18 @@
     animation: brea 6s ease-in-out infinite;
     object-fit: contain;
     object-position: bottom;
+  }
+
+  .is-listening .char-blink {
+    animation: blink 4s infinite;
+  }
+
+  .char-figure.is-listening {
+    animation: none;
+  }
+
+  .is-listening .char-open {
+    animation: blink-hide 4s infinite;
   }
 
   .bubble {

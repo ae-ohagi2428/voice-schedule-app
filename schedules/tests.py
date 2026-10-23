@@ -689,7 +689,6 @@ class ScheduleInputViewTest(TestCase):
         self.user = UserFactory()
         self.url = reverse('schedules:input')
 
-
     def test_back_link_to_dashboard_without_mode(self):
         # URLにmodeがない場合→「もどる」でダッシュボードに遷移
         self.client.force_login(self.user)
@@ -703,7 +702,7 @@ class ScheduleInputViewTest(TestCase):
         self.assertContains(response, reverse('schedules:edit'))
 
     def test_shows_db_and_session_schedules(self):
-        # 画面にDBとセッションの予定が表示される
+        # mode=add の場合、画面にDBとセッションの予定が表示される
         today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
         self.client.force_login(user=self.user)
         ScheduleFactory(
@@ -720,7 +719,7 @@ class ScheduleInputViewTest(TestCase):
         }, ]
         session['new_schedules_date'] = today.date().isoformat()
         session.save()
-        response = self.client.get(self.url)
+        response = self.client.get(f"{self.url}?mode=add")
         titles = [s['title'] for s in response.context['schedules']]
         self.assertIn('図書館へ行く', titles)
         self.assertIn('お昼ごはん', titles)
@@ -747,6 +746,100 @@ class ScheduleInputViewTest(TestCase):
         titles = [s['title'] for s in response.context['schedules']]
         self.assertIn('図書館へ行く', titles)
         self.assertNotIn('お昼ごはん', titles)
+
+    def test_hides_session_schedules_without_mode(self):
+        # modeなしでURLを開いた場合、保存済みの予定は出るがセッションの予定は出ない
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(user=self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='外出準備',
+            start_at=today.replace(hour=9),
+            end_at=today.replace(hour=9, minute=20),
+        )
+        session = self.client.session
+        session['new_schedules'] = [{
+            'title': '外出',
+            'start_at': today.replace(hour=9, minute=20).isoformat(),
+            'end_at': today.replace(hour=12).isoformat(),
+        }, ]
+        session['new_schedules_date'] = today.date().isoformat()
+        session.save()
+        response = self.client.get(self.url)
+        titles = [s['title'] for s in response.context['schedules']]
+        self.assertIn('外出準備', titles)
+        self.assertNotIn('外出', titles)
+
+    def test_marks_current_and_finished_schedules(self):
+        # 終わった予定はis_finishedがTrue、今の予定はis_currentがTrueになる
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='猫カフェ',
+            start_at=now - timedelta(minutes=120),
+            end_at=now - timedelta(minutes=30),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='ランチ',
+            start_at=now - timedelta(minutes=30),
+            end_at=now + timedelta(minutes=30),
+        )
+        response = self.client.get(self.url)
+        schedules = response.context['schedules']
+        self.assertTrue(schedules[0]['is_finished'])
+        self.assertFalse(schedules[0]['is_current'])
+        self.assertTrue(schedules[1]['is_current'])
+        self.assertFalse(schedules[1]['is_finished'])
+
+    def test_sets_duration_minutes(self):
+        # 10時〜11時半の予定のduration_minutesが90である
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='資格試験',
+            start_at=today.replace(hour=10),
+            end_at=today.replace(hour=11, minute=30),
+        )
+        response = self.client.get(self.url)
+        schedules = response.context['schedules']
+        self.assertEqual(schedules[0]['duration_minutes'], 90)
+        
+    def test_sets_gap_minutes_only_when_gap_exists(self):
+        # 間が空いた予定にはgap_minutesが入り、すぐ次が始まる予定には入らない
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='銀行へ行く',
+            start_at=today.replace(hour=9),
+            end_at=today.replace(hour=10),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='役所へ行く',
+            start_at=today.replace(hour=10),
+            end_at=today.replace(hour=11),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='郵便局へ行く',
+            start_at=today.replace(hour=11, minute=30),
+            end_at=today.replace(hour=12),
+        ) 
+        response = self.client.get(self.url)
+        schedules = response.context['schedules']
+        self.assertNotIn('gap_minutes', schedules[0])
+        self.assertEqual(schedules[1]['gap_minutes'], 30)
+        self.assertNotIn('gap_minutes', schedules[2])
+
+    def test_page_is_not_cached(self):
+        # ブラウザにキャッシュさせず、ブラウザの「戻る」が押された場合でも古い画面を表示しない
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertIn('no-cache', response['Cache-Control'])
 
 class TranscriptViewTest(TestCase):
     def setUp(self):

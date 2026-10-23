@@ -13,7 +13,7 @@
 
 {% block content %}
 <div id="input-page" data-mode="{{ mode|default:'' }}" data-transcript-url="{% url 'schedules:transcript' %}" data-csrf-token="{{ csrf_token }}">
-  <div class="px-[18px] pt-4 flex items-center justify-between">
+  <div class="px-[18px] py-4 flex items-center justify-between">
     {% if mode %}
       <a href="{% url 'schedules:edit' %}" class="w-[56px] flex-none text-[12.5px] text-[#8C86A0]">
         ‹ もどる
@@ -34,16 +34,36 @@
     </h1>
     <span class="w-[56px] flex-none"></span>
   </div>
-  <div class="pt-6 flex flex-col gap-4">
-    <div id="result-card" class="mx-[18px] p-4 rounded-[24px] bg-white border border-[#ECE9F1] 
-      min-h-[96px] shadow-[0_4px_16px_rgba(91,83,115,.07)] max-h-[140px] overflow-y-auto">
-      <p id="result" class="text-[15px] leading-[1.8] text-[#4E4666]">
-        <span class="text-[#A8A2B8]">ここに話した言葉が出るよ</span>
-      </p>
+  <div class="mx-[18px] flex flex-col gap-2 ">
+    <p class="text-[11px] text-[#8C86A0]">
+      こんなふうに話してね
+    </p>
+    <p class="text-[11.5px] leading-[1.7] text-[#8C86A0] bg-[#F3EEF9] rounded-[16px] px-[14px] py-[11px] border border-[#ECE9F1]">
+      {% if mode == 'add' %}
+        15時から買い物を30分
+      {% elif mode == 'edit' %}
+        買い物を16時からにして
+      {% else %}
+        9時から家の掃除を1時間、そのあとストレッチを45分、11時に買い物
+      {% endif %}
+    </p>
+  </div>
+  <div class="pt-2 flex flex-col gap-4">
+    <div class="mx-[18px] rounded-[24px] bg-white border border-[#ECE9F1] 
+      shadow-[0_4px_16px_rgba(91,83,115,.07)] h-[120px] relative overflow-hidden">
+      <div id="result-card" class="h-full overflow-y-auto p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <p id="result" class="text-[15px] leading-[1.8] text-[#4E4666]">
+          <span class="text-[#A8A2B8]">ここに話した言葉が出るよ</span>
+        </p>
+      </div>
+      <div class="absolute top-0 inset-x-0 h-4 pointer-events-none bg-gradient-to-b from-white to-transparent"></div>
     </div>
 
     <div class="mx-[18px] flex items-end gap-2 mb-2">
-      <img src="{% static 'images/character_listening.png' %}" alt="るるる" class="char-figure w-[100px] h-auto flex-none mb-4">
+      <div id="char-wrap" class="relative w-[100px] flex-none mb-4 char-figure char-open">
+        <img src="{% static 'images/character_listening.png' %}" alt="るるる" class="w-full h-auto">
+        <img src="{% static 'images/character_blink.png' %}" alt="" aria-hidden="true" class="char-blink absolute inset-0 w-full h-auto opacity-0">
+      </div>
       <div class="flex-1 flex flex-col items-start gap-2 mb-2">
         <p id="input-bubble" class="bubble">
           マイクボタンをおして予定を教えてね
@@ -76,6 +96,13 @@
           </button>
           <button type="button" id="cancel-btn" class="text-[11.5px] text-[#8C86A0] px-3 py-[3px] border border-[#8C86A0] rounded-full">キャンセル</button>
         </div>
+        <!-- 送信中 -->
+        <div id="state-sending" class="flex flex-col items-center gap-1 hidden">
+          <div class="w-[66px] h-[66px] flex items-center justify-center">
+            <span class="block w-7 h-7 rounded-full border-[3px] border-[#ECE9F1] border-t-[#9B86C9] animate-spin" role="status" aria-label="かんがえ中"></span>
+          </div>
+          <span class="invisible text-[11.5px] px-3 py-[3px] border" aria-hidden="true">キャンセル</span>
+        </div>
       </div>
     </div>
     <!-- 入力ストップ -->
@@ -85,11 +112,6 @@
       <button type="button" id="stopped-cancel-btn" class="btn-secondary">キャンセル</button>
       <button type="button" id="stopped-confirm-btn" class="btn-primary">編集画面に進む</button>
     </div>
-
-    <!-- 送信中 -->
-    <div id="state-sending" class="mx-[18px] hidden">
-    </div>
-
   </div>
   {% if schedules %}
     {% include 'schedules/_input_timeline.html' %}
