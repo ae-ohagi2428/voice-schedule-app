@@ -1,0 +1,16 @@
+<div class="flex gap-[10px] items-center py-[6px] border-b border-[#F3EEF9]
+  {% if schedule.is_finished %}opacity-50{% endif %}">
+  <span class="w-[92px] flex-none font-mono text-[11px] whitespace-nowrap
+    {% if schedule.is_current %}font-bold text-[#7E68B4] {% else %}text-[#8C86A0]{% endif %}">
+    {{ schedule.start_at|time:"G:i" }} ～ {{ schedule.end_at|time:"G:i" }}
+  </span>
+  {% if schedule.is_current %}
+    <span class="text-[9.5px] font-semibold text-white bg-[#9B86C9] px-2 py-[2px] rounded-full mr-1 flex-none">いま</span>
+  {% endif %}
+  <span class="flex-1 text-[12.5px]
+  {% if schedule.is_finished %}line-through{% endif %}
+  {% if schedule.is_new %}text-[#C0708F]{% else %}text-[#5B5373]{% endif %}">
+    {{ schedule.title }}
+  </span>
+  <span class="text-[10.5px] text-[#8C86A0]">{{ schedule.duration_minutes }}分</span>
+</div>
