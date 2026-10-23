@@ -51,7 +51,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         return context
 
-
+@method_decorator(never_cache, name='dispatch')
 class ScheduleInputView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/input.html'
 
@@ -73,7 +73,7 @@ class ScheduleInputView(LoginRequiredMixin, TemplateView):
                 'is_new': False
             }
             schedules_list.append(s_dict)
-        if mode != 'restart' and self.request.session.get('new_schedules_date') == today.isoformat():
+        if (mode == 'add' or mode == 'edit') and self.request.session.get('new_schedules_date') == today.isoformat():
             new_schedules = self.request.session.get('new_schedules', [])
             for new_schedule in new_schedules:
                 new_s_dict = {
@@ -83,7 +83,22 @@ class ScheduleInputView(LoginRequiredMixin, TemplateView):
                     'is_new': True
                 }
                 schedules_list.append(new_s_dict)
-        context['schedules'] = sorted(schedules_list, key=lambda s: s['start_at'])
+        schedules_list =  sorted(schedules_list, key=lambda s: s['start_at'])
+        now = timezone.now()
+        for schedule in schedules_list:
+            schedule['duration_minutes'] = int((schedule['end_at'] - schedule['start_at']).total_seconds() / 60)
+            schedule['is_finished'] = False
+            if schedule['end_at'] <= now:
+                schedule['is_finished'] = True
+            schedule['is_current'] = False
+            if schedule['start_at'] <= now and schedule['end_at'] > now:
+                schedule['is_current'] = True
+        for schedule, following_schedule in zip(schedules_list, schedules_list[1:], strict=False):
+            gap_time = following_schedule['start_at'] - schedule['end_at']
+            gap = int(gap_time.total_seconds() / 60)
+            if gap > 0:
+                schedule['gap_minutes'] = gap
+        context['schedules'] = schedules_list
         context['mode'] = mode
         return context
 

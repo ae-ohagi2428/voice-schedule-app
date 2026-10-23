@@ -1,201 +1,101 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}予定入力ページ{% endblock %}
+{% block title %}
+  {% if mode == 'add' %}
+    予定を追加 - ときよみ★
+  {% elif mode == 'edit' %}
+    予定をなおす - ときよみ★
+  {% else %}
+    予定を話す - ときよみ★
+  {% endif %}
+{% endblock %}
 
 {% block content %}
-<h1>予定入力ページ</h1>
-<div class="px-[22px] pt-6 flex flex-col gap-4">
-    <p id="result" class="page-sub min-h-[60px]"></p>
-    
-    {% if schedules %}
-      {% include 'schedules/_schedule_list.html' %}
+<div id="input-page" data-mode="{{ mode|default:'' }}" data-transcript-url="{% url 'schedules:transcript' %}" data-csrf-token="{{ csrf_token }}">
+  <div class="px-[18px] pt-4 flex items-center justify-between">
+    {% if mode %}
+      <a href="{% url 'schedules:edit' %}" class="w-[56px] flex-none text-[12.5px] text-[#8C86A0]">
+        ‹ もどる
+      </a>
+    {% else %}
+      <a href="{% url 'schedules:dashboard' %}" class="w-[56px] flex-none text-[12.5px] text-[#8C86A0]">
+        ‹ もどる
+      </a>
     {% endif %}
-
-    <!-- APIの残り回数を表示 -->
-    <p class="page-sub text-center">
-        今日はあと<span id="remaining">{{ remaining }}</span>回音声入力できるよ
-    </p>
-
-    <!-- 入力前 -->
-    <div id="state-before" class="flex gap-2">
-        {% if mode %}
-          <a href="{% url 'schedules:edit' %}" class="btn-secondary flex-1 text-center">編集ページにもどる</a>
-        {% else %}
-          <a href="{% url 'schedules:dashboard' %}" class="btn-secondary flex-1 text-center">もどる</a>
-        {% endif %}
-        <button type="button" id="start-btn"
-            class="btn-primary flex-1">話す</button>
+    <h1 class="page-title text-center">
+      {% if mode == 'add' %}
+        新しい予定を話して追加する
+      {% elif mode == 'edit' %}
+        話して予定をなおす
+      {% else %}
+        きょうの予定を話す
+      {% endif %}
+    </h1>
+    <span class="w-[56px] flex-none"></span>
+  </div>
+  <div class="pt-6 flex flex-col gap-4">
+    <div id="result-card" class="mx-[18px] p-4 rounded-[24px] bg-white border border-[#ECE9F1] 
+      min-h-[96px] shadow-[0_4px_16px_rgba(91,83,115,.07)] max-h-[140px] overflow-y-auto">
+      <p id="result" class="text-[15px] leading-[1.8] text-[#4E4666]">
+        <span class="text-[#A8A2B8]">ここに話した言葉が出るよ</span>
+      </p>
     </div>
 
-    <!-- 入力中 -->
-    <div id="state-listening" class="flex flex-col gap-3 hidden">
-      <div id="equalizer" class="h-12 flex items-center justify-center border border-dashed rounded-lg text-xs">
-        イコライザー（あとで）
+    <div class="mx-[18px] flex items-end gap-2 mb-2">
+      <img src="{% static 'images/character_listening.png' %}" alt="るるる" class="char-figure w-[100px] h-auto flex-none mb-4">
+      <div class="flex-1 flex flex-col items-start gap-2 mb-2">
+        <p id="input-bubble" class="bubble">
+          マイクボタンをおして予定を教えてね
+        </p>
+        <p class="bubble">
+          <span id="remaining-text">
+            きょうはあと<span id="remaining">{{ remaining }}</span>回音声入力できるよ
+          </span>
+          <span id="listening-hint" class="hidden">
+            話し終わったら■ボタンをおしてね
+          </span>
+        </p>
       </div>
-    <div class="flex gap-2">
-        <button type="button" id="cancel-btn" class="btn-secondary flex-1">
-            {% if mode %}今の入力をキャンセル{% else %}キャンセル{% endif %}
-        </button>
-        <button type="button" id="confirm-btn" class="btn-primary flex-1">音声入力を終了する</button>
+      <div class="flex-none flex flex-col items-center gap-2 mb-4">
+        <!-- 入力前 -->
+        <div id="state-before" class="flex flex-col items-center gap-1">
+          <button type="button" id="start-btn" class="btn-mic flex-none" aria-label="話しはじめる">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="3" width="6" height="11" rx="3"/>
+              <path d="M5 11a7 7 0 0 0 14 0"/>
+              <path d="M12 18v3"/>
+            </svg>
+          </button>
+          <span class="invisible text-[11.5px] px-3 py-[3px] border" aria-hidden="true">キャンセル</span>
+        </div>
+        <!-- 入力中 -->
+        <div id="state-listening" class="flex flex-col items-center gap-1 hidden">
+          <button type="button" id="confirm-btn" class="btn-mic" aria-label="話し終わる">
+            <span class="block w-[20px] h-[20px] rounded-[5px] bg-white"></span>
+          </button>
+          <button type="button" id="cancel-btn" class="text-[11.5px] text-[#8C86A0] px-3 py-[3px] border border-[#8C86A0] rounded-full">キャンセル</button>
+        </div>
       </div>
     </div>
-
     <!-- 入力ストップ -->
-    <div id="state-stopped" class="grid grid-cols-2 gap-2 hidden">
-        <button type="button" id="restart-btn" class="btn-secondary">最初から話す</button>
-        <button type="button" id="resume-btn" class="btn-secondary">続きを話す</button>
-        <button type="button" id="stopped-cancel-btn" class="btn-secondary">キャンセル</button>
-        <button type="button" id="stopped-confirm-btn" class="btn-primary">編集画面に進む</button>
+    <div id="state-stopped" class="grid grid-cols-2 gap-2 mx-[18px] hidden">
+      <button type="button" id="restart-btn" class="btn-secondary">最初から話す</button>
+      <button type="button" id="resume-btn" class="btn-secondary">続きを話す</button>
+      <button type="button" id="stopped-cancel-btn" class="btn-secondary">キャンセル</button>
+      <button type="button" id="stopped-confirm-btn" class="btn-primary">編集画面に進む</button>
     </div>
 
     <!-- 送信中 -->
-    <div id="state-sending" class="hidden">
-        <p class="page-sub text-center">かんがえ中……</p>
+    <div id="state-sending" class="mx-[18px] hidden">
     </div>
 
+  </div>
+  {% if schedules %}
+    {% include 'schedules/_input_timeline.html' %}
+  {% endif %}
 </div>
 {% endblock %}
 {% block scripts %}
-<script>
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ja-JP';
-    recognition.interimResults = true;
-    recognition.continuous = true;
-
-    const resultEl = document.getElementById('result');
-    
-    const mode = '{{ mode|default:""|escapejs }}';
-    let finalText = '';
-    let endedBy = null;
-    let remaining = {{ remaining }};
-    const remainingEl = document.getElementById('remaining');
-    const startBtn = document.getElementById('start-btn');
-    updateRemaining(remaining);
-
-    recognition.onresult = (event) => {
-        let interimText = '';
-        for (let i = event.resultIndex; i < event.results.length; i++){
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                finalText += transcript;
-            } else {
-                interimText += transcript;
-            }
-        }
-        resultEl.textContent = finalText + interimText;    
-    };
-
-    recognition.onend  = () => {
-        if (endedBy === 'confirm') {
-            sendText();
-        } else if (endedBy === null) {
-            showState('stopped');
-        }
-    };
-
-    recognition.onerror = (event) => {
-        console.log('音声認識エラー：', event.error);
-    };
-
-    const states = {
-        before: document.getElementById('state-before'),
-        listening: document.getElementById('state-listening'),
-        stopped: document.getElementById('state-stopped'),
-        sending: document.getElementById('state-sending'),
-    };
-
-    function showState(name) {
-        for (const key in states) {
-            if (key !== name) {
-                states[key].classList.add('hidden');
-            } else {
-                states[key].classList.remove('hidden');
-            };
-        };
-    };
-    
-    function updateRemaining(value) {
-        remaining = value;
-        remainingEl.textContent = value;
-        if (value === 0) {
-            startBtn.classList.add('opacity-50');
-            startBtn.setAttribute('aria-disabled', 'true');
-        }
-    }
-
-    async function sendText() {
-        if (finalText === '') {
-            showState('before');
-            return;
-        }
-        showState('sending');
-        try {
-            const response = await fetch('{% url "schedules:transcript" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}',
-                },
-                body: JSON.stringify({ text:finalText, mode: mode }),
-            });
-            const data = await response.json();
-            if (data.remaining !== undefined) {
-                updateRemaining(data.remaining);
-            }
-            if (!response.ok) {
-                showToast(data.error || 'うまくいかなかったよ。もう一度話してね', 'error');
-            } else {
-                window.location.href = data.redirect_url;
-                return;
-            }
-        } catch (error) {
-            showToast('うまくいかなかったよ。もう一度話してね', 'error');
-        }
-        showState('before');
-    };
-
-    document.getElementById('start-btn').addEventListener('click', () => {
-        if (remaining === 0) {
-            showToast('今日は既に5回使ったよ。また明日話してね。', 'error');
-            return;
-        }
-        endedBy = null;
-        recognition.start();
-        showState('listening');
-    });
-    document.getElementById('cancel-btn').addEventListener('click', () => {
-        endedBy = 'cancel';
-        recognition.abort();
-        showState('before');
-        finalText = '';
-        resultEl.textContent = '';
-    });
-    document.getElementById('confirm-btn').addEventListener('click', () => {
-        endedBy = 'confirm';
-        recognition.stop();
-        showState('sending');
-    });
-    document.getElementById('restart-btn').addEventListener('click', () => {
-        finalText = '' ;
-        endedBy = null;
-        recognition.start();
-        showState('listening');
-        resultEl.textContent = '';
-    });
-    document.getElementById('resume-btn').addEventListener('click', () => {
-        endedBy = null;
-        recognition.start();
-        showState('listening');
-    });
-    document.getElementById('stopped-cancel-btn').addEventListener('click', () => {
-        finalText = '';
-        showState('before');
-        resultEl.textContent = '';
-    });
-    document.getElementById('stopped-confirm-btn').addEventListener('click', () => {
-        sendText();
-    });
-
-</script>    
+  <script src="{% static 'schedules/js/input.js' %}"></script>
 {% endblock %}
