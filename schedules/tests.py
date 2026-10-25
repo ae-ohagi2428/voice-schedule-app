@@ -532,6 +532,28 @@ class ScheduleEditViewTest(TestCase):
         self.assertContains(response, '時間が重なってるみたい')
         self.assertFalse(Schedule.objects.filter(user=self.user).exists())
 
+    def test_post_overlap_is_formset_error(self):
+        # 予定の時間が重なっている場合、エラーが各予定の欄ではなく編集ページ全体のエラーとしてまとめて出る
+        self.client.force_login(self.user)
+        data = {
+            'form-TOTAL_FORMS': '2',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '散歩',
+            'form-0-start_time': '10:00',
+            'form-0-end_time': '11:00',
+            'form-1-title': '昼ごはん',
+            'form-1-start_time': '10:30',
+            'form-1-end_time': '11:30',
+        }
+        response = self.client.post(self.url, data)
+        formset = response.context['formset']
+        self.assertIn(
+            '散歩(10:00～11:00)と昼ごはん(10:30～11:30)の時間が重なってるみたい。重ならない時間に直してね',
+            formset.non_form_errors()
+        )
+        for form in formset.forms:
+            self.assertFalse(form.errors)
+
     def test_post_adjacent_schedules_are_valid(self):
         # 前の予定の終了時刻と次の予定の開始時刻が同じ場合にはエラーにならない
         self.client.force_login(self.user)
@@ -589,6 +611,30 @@ class ScheduleEditViewTest(TestCase):
         self.assertContains(response, '時間が重なってるみたい')
         self.assertEqual(Schedule.objects.filter(user=self.user).count(), 1)
 
+    def test_post_overlap_with_db_schedule_shows_both_titles(self):
+        # 全体のエラー文には、重なっている両方の予定の名前が出力される
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(user=self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='カフェへ行く',
+            start_at=today.replace(hour=10),
+            end_at=today.replace(hour=12),
+        )
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '散歩',
+            'form-0-start_time': '11:00',
+            'form-0-end_time': '11:30',
+        }
+        response = self.client.post(self.url, data)
+        formset = response.context['formset']
+        self.assertIn(
+            'カフェへ行く(10:00～12:00)と散歩(11:00～11:30)の時間が重なってるみたい。重ならない時間に直してね',
+            formset.non_form_errors()
+        )
+
     def test_shows_auto_shift_button(self):
         # 編集画面に、時刻をまとめて変更するためのボタンが置かれている
         today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
@@ -601,6 +647,25 @@ class ScheduleEditViewTest(TestCase):
         )
         response = self.client.get(self.url)
         self.assertContains(response, 'class="auto-shift-btn')
+
+    def test_shows_row_editor_parts(self):
+        # 予定がある場合、HTMLには'row-summary'（各予定カードの閉じた状態）・'close-btn'（ＯＫボタン）・
+        # 'shift-notice'（予定繰り下げメッセージ）・'overlap-error'（時間が重複した場合のエラー文の場所）・
+        # 'cancel-btn'（キャンセルボタン）が入っている
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(user=self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='研修動画視聴',
+            start_at=today.replace(hour=13),
+            end_at=today.replace(hour=14),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, 'row-summary')
+        self.assertContains(response, 'close-btn')
+        self.assertContains(response, 'shift-notice')
+        self.assertContains(response, 'overlap-error')
+        self.assertContains(response, 'cancel-btn')
 
     def test_page_is_not_cached(self):
         # 編集ページではブラウザにキャッシュさせず、ブラウザの「戻る」が押された場合でも古い画面を表示しない

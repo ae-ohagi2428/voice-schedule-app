@@ -1,15 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}
-  {% if mode == 'add' %}
-    予定を追加 - ときよみ★
-  {% elif mode == 'edit' %}
-    予定をなおす - ときよみ★
-  {% else %}
-    予定を話す - ときよみ★
-  {% endif %}
-{% endblock %}
+page-title text-center
 
 {% block content %}
 <div id="input-page" data-mode="{{ mode|default:'' }}" data-transcript-url="{% url 'schedules:transcript' %}" data-csrf-token="{{ csrf_token }}">

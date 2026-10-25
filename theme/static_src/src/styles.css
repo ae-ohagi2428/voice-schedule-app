@@ -832,3 +832,68 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* ---------- 編集ページ ---------- */
+.schedule-row.is-open .row-card {
+  border-width: 2px;
+  border-color: #B9A6DE;
+  box-shadow: 0 6px 18px rgba(142, 123, 192, 0.18);
+}
+
+.title-line .input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #4E4666;
+}
+
+.title-line .input:focus {
+  box-shadow: none;
+}
+
+.title-line:focus-within {
+  border-color: #9B86C9;
+}
+
+.time-line .input {
+  height: 40px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: #F6F2FB;
+  border: 1px solid transparent;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #4E4666;
+}
+
+.time-line .input:focus {
+  background: #fff;
+  border: 2px solid #9B86C9;
+  box-shadow: none;
+}
+
+.schedule-row[data-new] .summary-time, .schedule-row[data-new] .summary-title {
+  color: #C0708F;
+}
+
+.time-line .input::-webkit-datetime-edit {
+  display: flex;
+  justify-content: center;
+}
+
+@keyframes card-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.row-card.is-shaking {
+  animation: card-shake 0.4s ease-in-out;
+}
