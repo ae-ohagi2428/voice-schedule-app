@@ -84,17 +84,14 @@ class BaseScheduleFormSet(forms.BaseModelFormSet):
             if not form.cleaned_data.get('DELETE'):
                 start_at, end_at = form.get_datetimes()
                 items.append({'form': form, 'start': start_at, 'end': end_at})
+        errors = []
         for a, b in combinations(items, 2):
             if a['start'] < b['end'] and b['start'] < a['end']:
-                a['form'].add_error(
-                    None,
-                    f"{b['form'].cleaned_data['title']}({b['start']:%H:%M}～{b['end']:%H:%M})と時間が重なってるみたい。重ならない時間に直してね"
+                errors.append(
+                    f"{a['form'].cleaned_data['title']}({a['start']:%H:%M}～{a['end']:%H:%M})と"
+                    f"{b['form'].cleaned_data['title']}({b['start']:%H:%M}～{b['end']:%H:%M})の時間が重なってるみたい。"
+                    "重ならない時間に直してね"
                 )
-                b['form'].add_error(
-                    None,
-                    f"{a['form'].cleaned_data['title']}({a['start']:%H:%M}～{a['end']:%H:%M})と時間が重なってるみたい。重ならない時間に直してね"
-                )
-        
         user = self.form_kwargs.get('user')
         today = timezone.localdate()
         ids = {form.instance.pk for form in self.forms if form.instance.pk}
@@ -104,7 +101,10 @@ class BaseScheduleFormSet(forms.BaseModelFormSet):
             db_end = timezone.localtime(schedule.end_at)
             for item in items:
                 if item['start'] < db_end and db_start < item['end']:
-                    item['form'].add_error(
-                        None,
-                        f"{schedule.title}({db_start:%H:%M}〜{db_end:%H:%M})と時間が重なってるみたい。重ならない時間に直してね"
+                    errors.append(
+                        f"{schedule.title}({db_start:%H:%M}～{db_end:%H:%M})と"
+                        f"{item['form'].cleaned_data['title']}({item['start']:%H:%M}～{item['end']:%H:%M})"
+                        "の時間が重なってるみたい。重ならない時間に直してね"
                     )
+        if errors:
+            raise forms.ValidationError(errors)

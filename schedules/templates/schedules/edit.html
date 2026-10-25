@@ -1,34 +1,68 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}予定編集ページ{% endblock %}
+{% block title %}計画をなおす - ときよみ★{% endblock %}
 
 {% block content %}
 <div class="px-[22px] pt-6 pb-8 flex flex-col gap-5">
-  <h1 class="page-title text-center">予定編集ページ</h1>
+  <h1 class="page-title text-center">計画をなおす</h1>
 
   <form method="post" id="edit-form" class="flex flex-col gap-3 w-full max-w-[350px] mx-auto">
     {% csrf_token %}
     {{ formset.management_form }}
+    {% if formset.non_form_errors %}
+      <div class="flex flex-col gap-1 rounded-[14px] bg-white border border-rose-mark/40 px-3.5 py-2.5">
+        {% for error in formset.non_form_errors %}
+          <p class="field-error">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
     {% for form in formset %}
       {% include 'schedules/_schedule_form.html' %}
     {% empty %}
       <p id="empty-message" class="page-sub text-center">今日の予定はまだありません</p>
     {% endfor %}
     <button type="button" class="add-btn w-full rounded-[18px] border-[1.5px] border-dashed border-[#C3B4E0] p-[13px] text-center text-[12.5px] font-semibold text-[#7E68B4]">
-      ＋ 予定を足す
+      ＋ 予定を追加
     </button>
-
-    <button type="submit" name="action" value="run" class="btn-primary w-full mt-3">実行</button>
-    <button type="submit" name="action" value="add" class="btn-secondary w-full mt-3">声で予定を追加</button>
-    {% if formset.forms %}
-    <button type="button" id="restart-btn" class="btn-secondary w-full mt-3"
-      data-saved-count="{{ formset.initial_form_count }}"
-      data-restart-url="{% url 'schedules:input' %}?mode=restart">入れなおす</button>
-    {% endif %}
-    {% if formset.extra_forms %}
-    <a href="{% url 'schedules:input' %}?mode=edit" class="btn-secondary w-full mt-3 text-center">声で編集</a>
-    {% endif %}
+    <div class="flex items-end gap-2.5 mt-2">
+      <img src="{% static 'images/character_flying.png' %}" alt="るるる" class="char-figure w-[150px] h-auto">
+      <p class="bubble mb-4">「はじめる」を押していっしょにはじめよう☆</p>
+    </div>
+    <div class="flex flex-col gap-2">
+      <div class="flex gap-2">
+        <button type="submit" name="action" value="add"
+          class="flex-1 h-11 rounded-[15px] bg-white border-[1.5px] border-[#B9A6DE] flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-[#5B5373] text-center shadow-[0_4px_12px_rgba(192,112,143,0.18)] active:translate-y-px active:shadow-none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2.2" stroke-linecap="round">
+              <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+              <path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>
+          </svg>
+          声で予定を追加
+        </button>
+        {% if formset.extra_forms %}
+          <a href="{% url 'schedules:input' %}?mode=edit" 
+            class="flex-1 h-11 rounded-[15px] bg-white border-[1.5px] border-[#B9A6DE] flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-[#5B5373] text-center shadow-[0_4px_12px_rgba(192,112,143,0.18)] active:translate-y-px active:shadow-none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2.2" stroke-linecap="round">
+              <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+              <path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>
+            </svg>
+            声で予定を編集
+          </a>
+        {% endif %}
+      </div>
+      <div class="flex gap-2">
+        {% if formset.forms %}
+          <button type="button" id="restart-btn" class="w-[104px] shrink-0 h-[52px] rounded-[17px] bg-white/70 border border-[#5B5373]/10 text-[12.5px] font-semibold text-[#8C86A0]"
+            data-saved-count="{{ formset.initial_form_count }}" data-restart-url="{% url 'schedules:input' %}?mode=restart">
+            入れなおす
+          </button>
+        {% endif %}
+        <button type="submit" name="action" value="run" class="btn-primary flex-1 h-[52px]">
+          はじめる
+        </button>
+      </div>
+    </div>
+    
     <template id="empty-form">
       {% include 'schedules/_schedule_form.html' with form=formset.empty_form %}
     </template>

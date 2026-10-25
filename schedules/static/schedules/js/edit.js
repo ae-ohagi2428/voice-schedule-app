@@ -14,6 +14,7 @@ function toTimeString(minutes) {
   const m = total % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
+
 function getShiftTargets(base, excludeRow) {
   const rows = document.querySelectorAll('.schedule-row:not(.hidden)');
   const targets = Array.from(rows).filter((row) => {
@@ -22,6 +23,32 @@ function getShiftTargets(base, excludeRow) {
   });
   return targets;
 }
+
+function getRange(row) {
+  const startInput = row.querySelector('input[name$="-start_time"]');
+  const endInput = row.querySelector('input[name$="-end_time"]');
+  if (!startInput.value || !endInput.value) {
+    return null;
+  }
+  const startMinutes = toMinutes(startInput.value);
+  let endMinutes = toMinutes(endInput.value);
+  if (endMinutes < startMinutes) {
+    endMinutes += 1440;
+  }
+  return {start: startMinutes, end: endMinutes};
+}
+
+function getDuration(startValue, endValue) {
+  if (!startValue || !endValue) {
+    return null;
+  }
+  let minutes = toMinutes(endValue) - toMinutes(startValue);
+  if (minutes < 0) {
+    minutes += 1440;
+  }
+  return minutes;
+}
+
 function shiftRows(base, minutes, excludeRow) {
   const targets = getShiftTargets(base, excludeRow);
   const outOfRange = targets.some((row) => {
@@ -89,32 +116,115 @@ function updateSummary(row) {
   const titleEl = row.querySelector('input[name$="-title"]');
   const startTimeEl = row.querySelector('input[name$="-start_time"]');
   const endTimeEl = row.querySelector('input[name$="-end_time"]');
-  const timeText = `${startTimeEl.value} - ${endTimeEl.value}`;
-
+  const timeText = `${startTimeEl.value} ～ ${endTimeEl.value}`;
   let durationText = '';
-  if (startTimeEl.value && endTimeEl.value) {
-    let durationMinutes = toMinutes(endTimeEl.value) - toMinutes(startTimeEl.value);
-    if (durationMinutes < 0) {
-      durationMinutes += 1440;
-    }
-    durationText = `${durationMinutes}分`;
+  const minutes = getDuration(startTimeEl.value, endTimeEl.value);
+  if (minutes !== null) {
+    durationText = `${minutes}分`;
   }
   row.querySelector('.summary-time').textContent = timeText;
   row.querySelector('.summary-title').textContent = titleEl.value;
   row.querySelector('.summary-duration').textContent = durationText;
-  row.querySelector('.editor-duration').textContent = durationText;
+  updateEditorDuration(row);
+}
+
+function updateEditorDuration(row) {
+  const startInput = row.querySelector('input[name$="-start_time"]');
+  const endInput = row.querySelector('input[name$="-end_time"]');
+  const editorDuration = row.querySelector('.editor-duration');
+  const duration = getDuration(startInput.value, endInput.value);
+  const defaultDuration = getDuration(startInput.defaultValue, endInput.defaultValue);
+  editorDuration.replaceChildren();
+  if (!duration) {
+    return;
+  }
+  if (defaultDuration === null || duration === defaultDuration) {
+    editorDuration.textContent = `${duration}分`;
+  } else {
+    const diff = duration - defaultDuration;
+    let diffText = '';
+    if (diff > 0) {
+      diffText = `（+${diff}分）`;
+    } else {
+      diffText = `（-${-diff}分）`;
+    }
+    const span = document.createElement('span');
+    span.className = 'text-rose-mark font-bold';
+    span.textContent = diffText;
+    editorDuration.append(`${duration}分`, ' ', span);
+  }
+}
+
+function shakeRow(row) {
+  const rowCard = row.querySelector('.row-card');
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => {
+    rowCard.classList.add('is-shaking');
+    setTimeout(() => {
+      rowCard.classList.remove('is-shaking');
+    }, 400);
+  }, 300);
+  
 }
 
 function openRow(row) {
-  const rows = document.querySelectorAll('.schedule-row.is-open');
-  for (const el of rows) {
-    if (!closeRow(el)) {
-      return;
-    }
+  const openedRow = document.querySelector('.schedule-row.is-open');
+  if (openedRow) {
+    shakeRow(openedRow);
+    return;
   }
+  const titleInput = row.querySelector('input[name$="-title"]');
+  const startInput = row.querySelector('input[name$="-start_time"]');
+  const endInput = row.querySelector('input[name$="-end_time"]');
+  row.dataset.openTitle = titleInput.value;
+  row.dataset.openStart = startInput.value;
+  row.dataset.openEnd = endInput.value;
   row.querySelector('.row-summary').classList.add('hidden');
   row.querySelector('.row-editor').classList.remove('hidden');
-  row.classList.add('is-open');      
+  row.classList.add('is-open');
+}
+
+function setErrorMark(row, on) {
+  const rowCard = row.querySelector('.row-card');
+  const summaryError = row.querySelector('.summary-error');
+  if (on) {
+    rowCard.classList.add('border-rose-mark');
+    rowCard.classList.remove('border-[#E2DAEE]');
+    summaryError.classList.remove('hidden');
+  } else {
+    rowCard.classList.remove('border-rose-mark');
+    rowCard.classList.add('border-[#E2DAEE]');
+    summaryError.classList.add('hidden');
+  }
+}
+
+function updateOverlapMarks() {
+  const rows = Array.from(document.querySelectorAll('.schedule-row:not(.hidden)'));
+  rows.forEach((row) => {
+    const overlapTexts = [];
+    const overlapError = row.querySelector('.overlap-error');
+    const rowRange = getRange(row);
+    rows.forEach((other) => {
+      if (other === row) {
+        return;
+      }
+      const otherRange = getRange(other);
+      const otherTitle = other.querySelector('input[name$="-title"]');
+      const otherStart = other.querySelector('input[name$="-start_time"]');
+      const otherEnd = other.querySelector('input[name$="-end_time"]');
+      if ((rowRange !== null && otherRange !== null) && (
+        rowRange.start < otherRange.end && otherRange.start < rowRange.end)) {
+        overlapTexts.push(`${otherTitle.value}(${otherStart.value}～${otherEnd.value})`);
+      }
+    });
+    if (overlapTexts.length > 0) {
+      overlapError.textContent = `${overlapTexts.join('、')}と時間が重なってるみたい。重ならない時間に直してね`;
+      overlapError.classList.remove('hidden');
+    } else {
+      overlapError.classList.add('hidden');
+    }
+    setErrorMark(row, overlapTexts.length > 0 || row.hasAttribute('data-error'));
+  });
 }
 
 function validateRow(row) {
@@ -137,6 +247,16 @@ function validateRow(row) {
   return errors;
 }
 
+function collapseRow(row) {
+  updateSummary(row);
+  updateShiftNotice(row);
+  row.querySelector('.row-editor').classList.add('hidden');
+  row.querySelector('.row-summary').classList.remove('hidden');
+  row.classList.remove('is-open');
+  sortRows();
+  updateOverlapMarks();
+}
+
 function closeRow(row) {
   const errors = validateRow(row);
   const rowErrors = row.querySelector('.row-errors');
@@ -152,20 +272,28 @@ function closeRow(row) {
   }
   rowErrors.replaceChildren();
   row.removeAttribute('data-error');
-  const rowCard = row.querySelector('.row-card')
-  rowCard.classList.remove('border-rose-mark');
-  rowCard.classList.add('border-[#E2DAEE]');
-  const summaryError = row.querySelector('.summary-error');
-  if (summaryError) {
-    summaryError.remove();
-  }
-  updateSummary(row);
-  updateShiftNotice(row);
-  row.querySelector('.row-editor').classList.add('hidden');
-  row.querySelector('.row-summary').classList.remove('hidden');
-  row.classList.remove('is-open');
-  sortRows();
+  setErrorMark(row, false);
+  collapseRow(row);
   return true;
+}
+
+function cancelRow(row) {
+  const titleInput = row.querySelector('input[name$="-title"]');
+  const startInput = row.querySelector('input[name$="-start_time"]');
+  const endInput = row.querySelector('input[name$="-end_time"]');
+  if (!row.dataset.openTitle && !row.dataset.openStart && !row.dataset.openEnd) {
+    row.querySelector('input[name$="-DELETE"]').checked = true;
+    row.classList.add('hidden');
+    row.classList.remove('is-open');
+    updateOverlapMarks();
+    return;
+  } else {
+    titleInput.value = row.dataset.openTitle;
+    startInput.value = row.dataset.openStart;
+    endInput.value = row.dataset.openEnd;
+    row.querySelector('.row-errors').replaceChildren();
+    collapseRow(row);
+  }
 }
 
 function sortRows() {
@@ -196,10 +324,16 @@ form.addEventListener('click', (event) => {
   const addBtn = event.target.closest('.add-btn');
   const summaryBtn = event.target.closest('.row-summary');
   const closeBtn = event.target.closest('.close-btn');
+  const cancelBtn = event.target.closest('.cancel-btn');
   const deleteBtn = event.target.closest('.delete-btn');
   const autoShiftBtn = event.target.closest('.auto-shift-btn');
   const keepBtn = event.target.closest('.keep-btn');
   if (addBtn) {
+    const openedRow = document.querySelector('.schedule-row.is-open');
+    if (openedRow) {
+      shakeRow(openedRow);
+      return;
+    }
     const totalInput = document.getElementById('id_form-TOTAL_FORMS');
     const index = Number(totalInput.value);
     const emptyHtml = document.getElementById('empty-form').innerHTML;
@@ -212,7 +346,6 @@ form.addEventListener('click', (event) => {
       emptyMessageEl.classList.add('hidden');
     }
     openRow(newRow);
-
   }
   if (summaryBtn) {
     const row = summaryBtn.closest('.schedule-row');
@@ -222,6 +355,10 @@ form.addEventListener('click', (event) => {
     const row = closeBtn.closest('.schedule-row');
     closeRow(row);
   }
+  if (cancelBtn) {
+    const row = cancelBtn.closest('.schedule-row');
+    cancelRow(row);
+  }
   if (deleteBtn) {
     const ok = confirm('本当に削除しますか？');
     if (ok) {
@@ -229,6 +366,7 @@ form.addEventListener('click', (event) => {
       const deleteInput = row.querySelector('input[name$="-DELETE"]');
       deleteInput.checked = true;
       row.classList.add('hidden');
+      updateOverlapMarks();
     }
   }
   if (autoShiftBtn) {
@@ -243,6 +381,7 @@ form.addEventListener('click', (event) => {
       startInput.defaultValue = startInput.value;
       endInput.defaultValue = endInput.value;
       shiftNotice.classList.add('hidden');
+      updateOverlapMarks();
     }
   }
   if (keepBtn) {
@@ -253,6 +392,28 @@ form.addEventListener('click', (event) => {
     endInput.defaultValue = endInput.value;
     keepBtn.closest('.shift-notice').classList.add('hidden');
   }
+});
+
+form.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') {
+    return;
+  } else if (event.isComposing) {
+    return;
+  } else if (event.target.tagName !== 'INPUT') {
+    return;
+  }
+  const scheduleRow = event.target.closest('.schedule-row');
+  event.preventDefault();
+  closeRow(scheduleRow);
+});
+
+form.addEventListener('input', (event) => {
+  const input = event.target;
+  if (!input.name.endsWith('-start_time') && !input.name.endsWith('-end_time')) {
+    return;
+  }
+  const row = input.closest('.schedule-row');
+  updateEditorDuration(row);
 });
 
 const restartBtn = document.getElementById('restart-btn');
@@ -292,20 +453,14 @@ restartCancelBtn.addEventListener('click', () => {
   restartDialog.close();
 });
 
-document.addEventListener('click', (event) => {
-  if (!event.target.closest('.row-card') && !event.target.closest('.add-btn')) {
-    document.querySelectorAll('.schedule-row.is-open').forEach((row) => {
-      closeRow(row);
-    });
-  }
-});
 document.querySelectorAll('.schedule-row').forEach((row) => {
   updateSummary(row);
 });
 sortRows();
+updateOverlapMarks();
 
 const rows = document.querySelectorAll('.schedule-row:not(.hidden)');
-const firstRow = Array.from(rows).filter((row) => {
+const firstRow = Array.from(rows).find((row) => {
   const endInput = row.querySelector('input[name$="-end_time"]');
   return row.hasAttribute('data-error') || !endInput.value;
 });
