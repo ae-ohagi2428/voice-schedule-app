@@ -766,6 +766,13 @@ class ScheduleInputViewTest(TestCase):
         response = self.client.get(f"{reverse('schedules:input')}?mode=edit")
         self.assertContains(response, reverse('schedules:edit'))
 
+    def test_back_link_to_task_run_from_run(self):
+        # ?mode=add&from=runで開く（実行ページ→「声で予定を追加」ボタン押下）と、
+        # context['return_url']に実行ページのURLが入る
+        self.client.force_login(self.user)
+        response = self.client.get(f"{self.url}?mode=add&from=run")
+        self.assertEqual(response.context['return_url'], reverse('schedules:task_run'))
+
     def test_shows_db_and_session_schedules(self):
         # mode=add の場合、画面にDBとセッションの予定が表示される
         today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
@@ -1380,6 +1387,67 @@ class TaskRunViewTest(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(self.url)
         self.assertContains(response, f'href="{reverse("schedules:edit")}"')
+
+    def test_timeline_sets_gap_minutes(self):
+        # context['timeline']の予定のうち、次の予定の開始時刻と間隔が空いている場合にだけgap_minutes属性が入る
+        self.client.force_login(self.user)
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        ScheduleFactory(
+            user=self.user,
+            title='パン屋へ行く',
+            start_at=today.replace(hour=9),
+            end_at=today.replace(hour=10),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='銀行へ行く',
+            start_at=today.replace(hour=10, minute=30),
+            end_at=today.replace(hour=11),
+        )
+        ScheduleFactory(
+            user=self.user,
+            title='荷物箱詰め作業',
+            start_at=today.replace(hour=11),
+            end_at=today.replace(hour=12),
+        )
+        response = self.client.get(self.url)
+        timeline = response.context['timeline']
+        self.assertEqual(timeline[0].gap_minutes, 30)
+        self.assertFalse(hasattr(timeline[1], 'gap_minutes'))
+        self.assertFalse(hasattr(timeline[2], 'gap_minutes'))
+
+    def test_timeline_rows_have_schedule_ids(self):
+        # 一覧の各行を表すHTMLに、各予定のpkと同じdata-idが付いている
+        self.client.force_login(self.user)
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        schedule1 = ScheduleFactory(
+            user=self.user,
+            title='ＤＩＹストアへ行く',
+            start_at=today.replace(hour=14),
+            end_at=today.replace(hour=15),
+        )
+        schedule2 = ScheduleFactory(
+            user=self.user,
+            title='組立作業',
+            start_at=today.replace(hour=15),
+            end_at=today.replace(hour=16),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, f'data-id="{schedule1.pk}"')
+        self.assertContains(response, f'data-id="{schedule2.pk}"')
+
+    def test_no_timeline_when_no_schedules(self):
+        # 予定がないときは、HTMLにid="timeline"がない
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertNotContains(response, 'id="timeline"')
+
+    def test_shows_link_to_input_page(self):
+        # HTMLに「声で予定を追加」のリンク（?mode=add&from=run）がある
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, f'href="{reverse("schedules:input")}?mode=add&from=run"')
+
 
 class StartNowViewTest(TestCase):
     def setUp(self):

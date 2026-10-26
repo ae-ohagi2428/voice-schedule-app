@@ -20,10 +20,10 @@
         </div>
       </div>
       {% if schedule.gap_minutes %}
-        <div class="flex gap-[11px] items-center">
+        <div class="run-gap flex gap-[11px] items-center" data-id="{{ schedule.pk }}">
           <div class="w-[42px] flex-none"></div>
           <div class="h-[18px] flex-none border-l-[3px] border-dotted border-[#E7DFF3]"></div>
-          <span class="text-[10.5px] text-[#8C86A0]">あき {{ schedule.gap_minutes }}分</span>
+          <span class="run-gap-minutes text-[10.5px] text-[#8C86A0]">あき {{ schedule.gap_minutes }}分</span>
         </div>
       {% endif %}
     {% endfor %}

@@ -65,8 +65,16 @@ class ScheduleInputView(LoginRequiredMixin, TemplateView):
         context['remaining'] = get_remaining(usage)
 
         mode = self.request.GET.get('mode')
+        from_value = self.request.GET.get('from')
+        if from_value == 'run':
+            return_url = reverse('schedules:task_run')
+        elif mode:
+            return_url = reverse('schedules:edit')
+        else:
+            return_url = reverse('schedules:dashboard')
+        context['return_url'] = return_url
+
         schedules = Schedule.objects.filter(user=self.request.user, start_at__date=today)
-        
         schedules_list = []
         for schedule in schedules:
             s_dict = {

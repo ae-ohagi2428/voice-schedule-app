@@ -13,6 +13,7 @@ const runningTitleEl = document.getElementById('running-title');
 const runningRemainingEl = document.getElementById('running-remaining');
 const runningProgressEl = document.getElementById('running-progress');
 const timelineRows = document.querySelectorAll('.run-row');
+const gapRows = document.querySelectorAll('.run-gap');
 const timelineEl = document.getElementById('timeline');
 const waitingTimeEl = document.getElementById('waiting-time');
 const waitingTitleEl = document.getElementById('waiting-title');
@@ -105,6 +106,14 @@ function updateTimeline(status, now) {
         row.querySelector('.run-time').textContent = formatTime(schedule.start_at);
         const runDuration = `${Math.round((schedule.end_at - schedule.start_at) / 60000)}分`;
         row.querySelector('.run-duration').textContent = runDuration;
+    }
+    for (const row of gapRows) {
+        const rowId = Number(row.dataset.id);
+        const schedule = schedules.find((schedule) => schedule.id === rowId);
+        const nextSchedule = schedules[schedules.indexOf(schedule) + 1];
+        const gapMinutes = Math.floor((nextSchedule.start_at - schedule.end_at) / 60000);
+        row.classList.toggle('hidden', gapMinutes <= 0);
+        row.querySelector('.run-gap-minutes').textContent = `あき ${gapMinutes}分`;
     }
 }
 
