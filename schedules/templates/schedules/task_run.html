@@ -1,45 +1,70 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}タスク実行ページ{% endblock %}
+{% block title %}
+  タスクを進める - ときよみ★
+{% endblock %}
 
 {% block content %}
-<h1 class="text-center">タスクを進める</h1>
+<div class="px-[18px] pt-6 pb-8 flex flex-col gap-5">
+  <h1 class="page-title text-center">タスクを進める</h1>
+  {{ schedules_list|json_script:"schedules-data" }}
+  {{ settings_data|json_script:"settings-data" }}
+  <button type="button" id="character" class="mx-auto block">
+    <img src="{% static 'images/character_magic.png' %}" alt="るるると魔法のステッキ"
+      class="w-32 h-auto">
+  </button>
+  <p id="speech-bubble" class="{% if state == 'finished' or state == 'none' %}hidden{% endif %}">
+    るるるをタップしてね。声で予定をおしらせするよ！
+  </p>
 
-{{ schedules_list|json_script:"schedules-data" }}
+  <div id="state-running" class="flex flex-col items-center gap-1.5 {% if state != 'running' %}hidden{% endif %}">
+      <span id="running-time" class="text-[11.5px] text-[#8C86A0]">{{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}</span>
+      <span id="running-title" class="text-[20px] font-bold text-[#4E4666]">{{ current_schedule.title }}</span>
+      <div class="flex items-baseline gap-2 mt-1.5">
+        <span class="text-[11px] text-[#8C86A0]">のこり</span>
+        <span id="running-remaining" class="timer-big">
 
-{{ settings_data|json_script:"settings-data" }}
-<button type="button" id="character" class="mx-auto block">
-  <img src="{% static 'images/character_magic.png' %}" alt="るるると魔法のステッキ"
-    class="w-32 h-auto">
-</button>
-<p id="speech-bubble" class="{% if state == 'finished' or state == 'none' %}hidden{% endif %}">
-  るるるをタップしてね。声で予定をおしらせするよ！
-</p>
+        </span>
+      </div>
+      <div class="w-[210px] h-1 rounded-full bg-[#EFE9F8] overflow-hidden mt-1">
+        <div id="running-progress" class="h-full w-0 bg-gradient-to-r from-[#9B86C9] to-[#C8A0C2]">
 
-<div id="state-running" class="{% if state != 'running' %}hidden {% endif %}">
-    <span id="running-time">{{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}</span>
-    <span id="running-title">{{ current_schedule.title }}</span>
+        </div>
+      </div>
+  </div>
+  <div id="state-waiting" class="flex flex-col items-center gap-1.5 {% if state != 'waiting' and state != 'soon' %}hidden{% endif %}">
+    <p class="text-[11px] text-[#8C86A0]">つぎの予定</p>
+    <span id="waiting-time" class="text-[11.5px] text-[#8C86A0]">{{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }}</span>
+    <span id="waiting-title" class="text-[20px] font-bold text-[#4E4666]">{{ next_schedule.title }}</span>
+    {% csrf_token %}
+      <button type="button" id="start-now-btn" class="btn-primary w-full mt-3"
+        data-start-now-url="{% url 'schedules:start_now' %}">今すぐ始める
+      </button>
+  </div>
+  <div id="state-finished" class="flex flex-col items-center gap-3 {% if state != 'finished' %}hidden{% endif %}">
+    <p class="text-[20px] font-bold text-[#4E4666]">今日の予定は全部おわったよ</p>
+    <a href="{% url 'schedules:dashboard' %}" class="btn-secondary w-full">ダッシュボードにもどる</a>
+  </div>
+  <div id="state-none" class="flex flex-col items-center gap-3 {% if state != 'none' %}hidden{% endif %}">
+    <p class="text-[20px] font-bold text-[#4E4666]">まだ予定が入ってないよ</p>
+    <a href="{% url 'schedules:dashboard' %}" class="btn-secondary w-full">ダッシュボードにもどる</a>
+  </div>
+  {% include 'schedules/_run_timeline.html' %}
+  <div class="flex gap-2">
+    <a href="{% url 'schedules:input' %}?mode=add" class="flex-1 h-11 rounded-[15px] bg-white border-[1.5px] border-[#B9A6DE] flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-[#5B5373] text-center shadow-[0_4px_12px_rgba(192,112,143,0.18)] active:translate-y-px active:shadow-none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2.2" stroke-linecap="round">
+        <rect x="9" y="3" width="6" height="11" rx="3"></rect>
+        <path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>
+      </svg>
+      声で予定を追加
+    </a>
+    <a href="{% url 'schedules:edit' %}" class="flex-1 h-11 rounded-[15px] bg-white border-[1.5px] border-[#B9A6DE] flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-[#5B5373] text-center shadow-[0_4px_12px_rgba(192,112,143,0.18)] active:translate-y-px active:shadow-none">
+      予定をなおす
+    </a>
+  </div>
 </div>
-<div id="state-waiting" class="{% if state != 'waiting' and state != 'soon' %}hidden {% endif %}">
-  <p>つぎの予定</p>
-  <span id="waiting-time">{{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }}</span>
-  <span id="waiting-title">{{ next_schedule.title }}</span>
-  {% csrf_token %}
-    <button type="button" id="start-now-btn" class="btn-primary w-full mt-3"
-      data-start-now-url="{% url 'schedules:start_now' %}">今すぐ始める
-    </button>
-</div>
-<div id="state-finished" class="{% if state != 'finished' %}hidden {% endif %}">
-  <p>今日の予定は全部おわったよ</p>
-  <a href="{% url 'schedules:dashboard' %}" class="btn-secondary w-full">ダッシュボードにもどる</a>
-</div>
-<div id="state-none" class="{% if state != 'none' %}hidden {% endif %}">
-  <p>まだ予定が入ってないよ</p>
-  <a href="{% url 'schedules:dashboard' %}" class="btn-secondary w-full">ダッシュボードにもどる</a>
-</div>
-<a href="{% url 'schedules:edit' %}" class="btn-secondary w-full">予定をなおす</a>
 {% endblock %}
 {% block scripts %}
-<script src="{% static 'schedules/js/task_run.js' %}"></script>
+  <script src="{% static 'schedules/js/task_run.js' %}"></script>
 {% endblock %}
