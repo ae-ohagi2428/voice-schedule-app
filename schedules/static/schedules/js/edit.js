@@ -366,6 +366,7 @@ form.addEventListener('click', (event) => {
       const deleteInput = row.querySelector('input[name$="-DELETE"]');
       deleteInput.checked = true;
       row.classList.add('hidden');
+      row.classList.remove('is-open');
       updateOverlapMarks();
     }
   }

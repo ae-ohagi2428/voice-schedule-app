@@ -897,3 +897,43 @@
 .row-card.is-shaking {
   animation: card-shake 0.4s ease-in-out;
 }
+
+.now-badge {
+  display: none;
+}
+
+.run-row.is-now .now-badge {
+  display: inline-block;
+}
+
+.run-row.is-now .run-time {
+  font-weight: 700;
+  color: #7E68B4;
+}
+
+.run-row.is-now .run-line {
+  background: linear-gradient(to bottom, #9B86C9, #C8A0C2);
+}
+
+.run-row.is-now .run-card {
+  border: 2px solid #B9A6DE;
+  box-shadow: 0 6px 18px rgba(142, 123, 192, .18);
+}
+
+.run-row.is-now .run-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #4E4666;
+}
+
+.run-row.is-done {
+  opacity: .55;
+}
+
+.run-row.is-done .run-line {
+  background: #D9D2E8;
+}
+
+.run-row.is-done .run-title {
+  text-decoration: line-through;
+}

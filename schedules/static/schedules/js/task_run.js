@@ -10,6 +10,11 @@ const finishedEl = document.getElementById('state-finished');
 const noneEl = document.getElementById('state-none');
 const runningTimeEl = document.getElementById('running-time');
 const runningTitleEl = document.getElementById('running-title');
+const runningRemainingEl = document.getElementById('running-remaining');
+const runningProgressEl = document.getElementById('running-progress');
+const timelineRows = document.querySelectorAll('.run-row');
+const gapRows = document.querySelectorAll('.run-gap');
+const timelineEl = document.getElementById('timeline');
 const waitingTimeEl = document.getElementById('waiting-time');
 const waitingTitleEl = document.getElementById('waiting-title');
 const startNowBtn = document.getElementById('start-now-btn');
@@ -42,10 +47,12 @@ function getScheduleStatus(schedules, now) {
         state = 'none';
     }
     let remainingMinutes = null;
+    let remainingSeconds = null;
     if (currentSchedule) {
         remainingMinutes = Math.ceil((currentSchedule.end_at - now) / 60000);
+        remainingSeconds = Math.ceil((currentSchedule.end_at - now) / 1000);
     }
-    return {state, currentSchedule, nextSchedule, remainingMinutes};
+    return {state, currentSchedule, nextSchedule, remainingMinutes, remainingSeconds};
 }
 
 function formatTime(date) {
@@ -73,6 +80,12 @@ function renderStatus(status) {
         runningEl.classList.remove('hidden');
         runningTimeEl.textContent = `${formatTime(status.currentSchedule.start_at)} ～ ${formatTime(status.currentSchedule.end_at)}`;
         runningTitleEl.textContent = `${status.currentSchedule.title}`;
+        const minutes = Math.floor(status.remainingSeconds / 60);
+        const seconds = String(status.remainingSeconds % 60).padStart(2, '0');
+        runningRemainingEl.textContent = `${minutes}:${seconds}`;
+        const totalSeconds = (status.currentSchedule.end_at - status.currentSchedule.start_at) / 1000;
+        const progressPercentage = (totalSeconds - status.remainingSeconds) / totalSeconds * 100;
+        runningProgressEl.style.width = `${progressPercentage}%`;
     } else if (status.state === 'waiting') {
         waitingEl.classList.remove('hidden');
         waitingTimeEl.textContent = `${formatTime(status.nextSchedule.start_at)} ～ ${formatTime(status.nextSchedule.end_at)}`;
@@ -84,12 +97,46 @@ function renderStatus(status) {
     }
 }
 
+function updateTimeline(status, now) {
+    for (const row of timelineRows) {
+        const rowId = Number(row.dataset.id);
+        const schedule = schedules.find((schedule) => schedule.id === rowId);
+        row.classList.toggle('is-now', schedule === status.currentSchedule);
+        row.classList.toggle('is-done', schedule.end_at <= now);
+        row.querySelector('.run-time').textContent = formatTime(schedule.start_at);
+        const runDuration = `${Math.round((schedule.end_at - schedule.start_at) / 60000)}分`;
+        row.querySelector('.run-duration').textContent = runDuration;
+    }
+    for (const row of gapRows) {
+        const rowId = Number(row.dataset.id);
+        const schedule = schedules.find((schedule) => schedule.id === rowId);
+        const nextSchedule = schedules[schedules.indexOf(schedule) + 1];
+        const gapMinutes = Math.floor((nextSchedule.start_at - schedule.end_at) / 60000);
+        row.classList.toggle('hidden', gapMinutes <= 0);
+        row.querySelector('.run-gap-minutes').textContent = `あき ${gapMinutes}分`;
+    }
+}
+
+function scrollTimeline(previous, current) {
+    if (previous && previous.currentSchedule === current.currentSchedule) {
+        return;
+    }
+    const targetSchedule = current.currentSchedule ?? current.nextSchedule;
+    if (!targetSchedule) {
+        return;
+    }
+    const rowEl = timelineEl.querySelector(`[data-id="${targetSchedule.id}"]`);
+    timelineEl.scrollTop = rowEl.offsetTop - (timelineEl.clientHeight - rowEl.offsetHeight) / 2;
+}
+
 function checkStatus() {
     const now = new Date();
     const status = getScheduleStatus(schedules, now);
     renderStatus(status);
+    updateTimeline(status, now);
     announceChange(previousStatus, status);
     announceRemaining(previousStatus, status);
+    scrollTimeline(previousStatus, status);
     previousStatus = status;
 }
 
@@ -180,6 +227,8 @@ function announceRemaining(previous, current) {
         speak(`${current.currentSchedule.title}の残り時間はあと${current.remainingMinutes}分だよ`);
     }
 }
+
+checkStatus();
 
 setInterval(checkStatus, 1000);
 document.addEventListener('visibilitychange', () => {

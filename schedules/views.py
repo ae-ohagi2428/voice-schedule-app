@@ -24,6 +24,13 @@ from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
 
 
+def add_gap_minutes(timeline):
+    for schedule, following_schedule in zip(timeline, timeline[1:], strict=False):
+        gap_time = following_schedule.start_at - schedule.end_at
+        gap = int(gap_time.total_seconds() / 60)
+        if gap > 0:
+            schedule.gap_minutes = gap
+
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/dashboard.html'
 
@@ -42,11 +49,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['next_schedule'] = next_schedule
 
         timeline = list(schedules)
-        for schedule, following_schedule in zip(timeline, timeline[1:], strict=False):
-            gap_time = following_schedule.start_at - schedule.end_at
-            gap = int(gap_time.total_seconds() / 60)
-            if gap > 0:
-                schedule.gap_minutes = gap
+        add_gap_minutes(timeline)
         context['timeline'] = timeline
 
         return context
@@ -62,8 +65,16 @@ class ScheduleInputView(LoginRequiredMixin, TemplateView):
         context['remaining'] = get_remaining(usage)
 
         mode = self.request.GET.get('mode')
+        from_value = self.request.GET.get('from')
+        if from_value == 'run':
+            return_url = reverse('schedules:task_run')
+        elif mode:
+            return_url = reverse('schedules:edit')
+        else:
+            return_url = reverse('schedules:dashboard')
+        context['return_url'] = return_url
+
         schedules = Schedule.objects.filter(user=self.request.user, start_at__date=today)
-        
         schedules_list = []
         for schedule in schedules:
             s_dict = {
@@ -239,6 +250,10 @@ class TaskRunView(LoginRequiredMixin, TemplateView):
         context['state'] = state
         context['current_schedule'] = current_schedule
         context['next_schedule'] = next_schedule
+
+        timeline = list(schedules)
+        add_gap_minutes(timeline)
+        context['timeline'] = timeline
 
         setting, created = Setting.objects.get_or_create(user=self.request.user)
         settings_data = {

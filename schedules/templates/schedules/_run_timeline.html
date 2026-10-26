@@ -1,0 +1,32 @@
+{% if timeline %}
+  <div id="timeline" class="max-h-[240px] overflow-y-auto relative flex flex-col gap-[9px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div class="fade-top flex-none z-10"></div>
+    {% for schedule in timeline %}
+      <div class="run-row flex gap-[11px] items-stretch" data-id="{{ schedule.pk }}">
+        <div class="run-time w-[42px] text-right font-mono text-[11.5px] pt-[11px] text-[#8C86A0]">
+          {{ schedule.start_at|time:"G:i" }}
+        </div>
+        <div class="run-line w-[3px] rounded-sm flex-none bg-[#E7DFF3]"></div>
+        <div class="run-card flex-1 bg-white border border-[#ECE9F1] rounded-[14px] px-[13px] py-[10px] flex justify-between items-center">
+          <span class="flex items-center gap-[6px]">
+            <span class="now-badge text-[9.5px] text-white bg-[#9B86C9] px-[9px] py-[3px] rounded-full">いま</span>
+            <span class="run-title text-[13px] text-[#5B5373]">
+              {{ schedule.title }}
+            </span>
+          </span>
+          <span class="run-duration text-[10.5px] text-[#8C86A0]">
+            {{ schedule.duration_minutes }}分
+          </span>
+        </div>
+      </div>
+      {% if schedule.gap_minutes %}
+        <div class="run-gap flex gap-[11px] items-center" data-id="{{ schedule.pk }}">
+          <div class="w-[42px] flex-none"></div>
+          <div class="h-[18px] flex-none border-l-[3px] border-dotted border-[#E7DFF3]"></div>
+          <span class="run-gap-minutes text-[10.5px] text-[#8C86A0]">あき {{ schedule.gap_minutes }}分</span>
+        </div>
+      {% endif %}
+    {% endfor %}
+    <div class="fade-bottom flex-none z-10"></div>
+  </div>
+{% endif %}
