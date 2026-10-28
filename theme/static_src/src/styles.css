@@ -937,3 +937,9 @@
 .run-row.is-done .run-title {
   text-decoration: line-through;
 }
+
+.gap-label {
+  font-size: 11px;
+  color: #8C86A0;
+  text-align: center;
+}

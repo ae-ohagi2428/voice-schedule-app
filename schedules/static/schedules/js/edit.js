@@ -227,6 +227,29 @@ function updateOverlapMarks() {
   });
 }
 
+function updateGaps() {
+  document.querySelectorAll('.gap-label').forEach((label) => {
+    label.remove();
+  });
+  const rows = Array.from(document.querySelectorAll('.schedule-row:not(.hidden)'));
+  for (let i = 0; i < rows.length - 1; i++) {
+    const row = rows[i];
+    const nextRow = rows[i + 1];
+    const rowEnd = row.querySelector('input[name$="-end_time"]').value;
+    const nextRowStart = nextRow.querySelector('input[name$="-start_time"]').value;
+    if (!rowEnd || !nextRowStart) {
+      continue;
+    }
+    const gapTime = toMinutes(nextRowStart) - toMinutes(rowEnd);
+    if (gapTime > 0) {
+      const p = document.createElement('p');
+      p.className = 'gap-label';
+      p.textContent = `あき ${gapTime}分`;
+      row.after(p);
+    }
+  }
+}
+
 function validateRow(row) {
   const titleInput = row.querySelector('input[name$="-title"]');
   const startInput = row.querySelector('input[name$="-start_time"]');
@@ -255,6 +278,7 @@ function collapseRow(row) {
   row.classList.remove('is-open');
   sortRows();
   updateOverlapMarks();
+  updateGaps();
 }
 
 function closeRow(row) {
@@ -286,6 +310,7 @@ function cancelRow(row) {
     row.classList.add('hidden');
     row.classList.remove('is-open');
     updateOverlapMarks();
+    updateGaps();
     return;
   } else {
     titleInput.value = row.dataset.openTitle;
@@ -362,12 +387,17 @@ form.addEventListener('click', (event) => {
   if (deleteBtn) {
     const ok = confirm('本当に削除しますか？');
     if (ok) {
-      const row = deleteBtn.closest('.schedule-row');
-      const deleteInput = row.querySelector('input[name$="-DELETE"]');
+      const scheduleRowEl = deleteBtn.closest('.schedule-row');
+      const deleteInput = scheduleRowEl.querySelector('input[name$="-DELETE"]');
       deleteInput.checked = true;
-      row.classList.add('hidden');
-      row.classList.remove('is-open');
+      scheduleRowEl.classList.add('hidden');
+      scheduleRowEl.classList.remove('is-open');
       updateOverlapMarks();
+      updateGaps();
+      const rows = document.querySelectorAll('.schedule-row:not(.hidden)');
+      rows.forEach((row) => {
+        updateShiftNotice(row);
+      });
     }
   }
   if (autoShiftBtn) {
@@ -383,6 +413,7 @@ form.addEventListener('click', (event) => {
       endInput.defaultValue = endInput.value;
       shiftNotice.classList.add('hidden');
       updateOverlapMarks();
+      updateGaps();
     }
   }
   if (keepBtn) {
@@ -405,7 +436,7 @@ form.addEventListener('keydown', (event) => {
   }
   const scheduleRow = event.target.closest('.schedule-row');
   event.preventDefault();
-  closeRow(scheduleRow);
+  scheduleRow.querySelector('.close-btn').focus();
 });
 
 form.addEventListener('input', (event) => {
@@ -459,6 +490,7 @@ document.querySelectorAll('.schedule-row').forEach((row) => {
 });
 sortRows();
 updateOverlapMarks();
+updateGaps();
 
 const rows = document.querySelectorAll('.schedule-row:not(.hidden)');
 const firstRow = Array.from(rows).find((row) => {
