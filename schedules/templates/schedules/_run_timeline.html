@@ -3,8 +3,13 @@
     <div class="fade-top flex-none z-10"></div>
     {% for schedule in timeline %}
       <div class="run-row flex gap-[11px] items-stretch" data-id="{{ schedule.pk }}">
-        <div class="run-time w-[42px] text-right font-mono text-[11.5px] pt-[11px] text-[#8C86A0]">
-          {{ schedule.start_at|time:"G:i" }}
+        <div class="w-[48px] flex-none flex flex-col items-end pt-[5px] font-mono">
+          <span class="run-time text-[11.5px] text-[#8C86A0]">
+            {{ schedule.start_at|time:"G:i" }}
+          </span>
+          <span class="run-end text-[10px] text-[#A8A2B8]">
+            ～{{ schedule.end_at|time:"G:i" }}
+          </span>
         </div>
         <div class="run-line w-[3px] rounded-sm flex-none bg-[#E7DFF3]"></div>
         <div class="run-card flex-1 bg-white border border-[#ECE9F1] rounded-[14px] px-[13px] py-[10px] flex justify-between items-center">
@@ -21,7 +26,7 @@
       </div>
       {% if schedule.gap_minutes %}
         <div class="run-gap flex gap-[11px] items-center" data-id="{{ schedule.pk }}">
-          <div class="w-[42px] flex-none"></div>
+          <div class="w-[48px] flex-none"></div>
           <div class="h-[18px] flex-none border-l-[3px] border-dotted border-[#E7DFF3]"></div>
           <span class="run-gap-minutes text-[10.5px] text-[#8C86A0]">あき {{ schedule.gap_minutes }}分</span>
         </div>
