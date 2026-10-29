@@ -1,0 +1,1243 @@
+/* =========================================================
+   パーツを重ねる（重ね順：体 → 頭グループ → 手と時計 → エフェクト）
+   ========================================================= */
+.chara {
+  position: relative;
+  width: 240px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* キャラクター本体を入れる箱（揺れる・呼吸するのはこの箱）。音符と Z はこの箱の外に置く */
+.sway-wrap {
+  position: relative;
+  transform-origin: bottom center;
+}
+/* 体：この画像が箱の大きさを決める */
+.base {
+  display: block;
+  width: 100%;
+}
+.head, .face, .fx-z {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* 回転・伸び縮みの中心 */
+.head, .hands { transform-origin: 53% 72%; }   /* 首のあたり */
+.antenna   { transform-origin: 49% 28%; }       /* 触角の付け根 */
+.ear-left  { transform-origin: 42% 37%; }       /* 左耳の付け根 */
+.ear-right { transform-origin: 59% 34%; }       /* 右耳の付け根 */
+.fluff     { transform-origin: 42% 34%; }       /* ふわふわの付け根（お花のうしろ） */
+
+/* つぶした目：左目・右目を clip-path で切り出し、縦につぶす */
+.e-sq-l  { clip-path: inset(0 47.9% 0 0); transform-origin: 41.2% 62.2%; transform: scaleY(0.88); }
+.e-sq-r  { clip-path: inset(0 0 0 52.1%); transform-origin: 63.0% 58.2%; transform: scaleY(0.88); }
+.e-hsq-l { clip-path: inset(0 47.9% 0 0); transform-origin: 42.0% 64.4%; transform: scaleY(0.6); }
+.e-hsq-r { clip-path: inset(0 0 0 52.1%); transform-origin: 63.2% 59.7%; transform: scaleY(0.6); }
+
+/* 切り替える目・口・エフェクトは、ふだんは見えない。状態ごとに見せ方を決める */
+.e-normal, .e-half, .e-closed, .e-laugh,
+.e-sq-l, .e-sq-r, .e-hsq-l, .e-hsq-r,
+.m-small, .m-closed,
+.fx-note-l, .fx-note-r, .fx-z1, .fx-z2, .fx-z3,
+.fx-bubble-heart, .fx-bubble-alert {
+  opacity: 0;
+}
+
+/* 音符の回転の中心は、それぞれの音符の真ん中 */
+.fx-note-l { transform-origin: 13% 39%; }
+.fx-note-r { transform-origin: 89% 41%; }
+
+/* 吹き出しがふくらむ中心は、それぞれの吹き出しのしっぽのあたり（キャラクターのほうから飛び出して見える） */
+.fx-bubble-heart { transform-origin: 80.5% 45.5%; }
+.fx-bubble-alert { transform-origin: 18.7% 43.9%; }
+
+/*
+  なめらかに揺らすための @keyframes
+  sin（サイン）の形で角度を細かく書き、linear で動かしている。
+  こうすると、端ではゆっくり・真ん中では速くなり、途中で止まらない。どれも 0度 から始まる
+*/
+@keyframes idle-body {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.77deg); }
+  12.5%  { transform: rotate(1.41deg); }
+  18.75% { transform: rotate(1.85deg); }
+  25%    { transform: rotate(2.00deg); }
+  31.25% { transform: rotate(1.85deg); }
+  37.5%  { transform: rotate(1.41deg); }
+  43.75% { transform: rotate(0.77deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.77deg); }
+  62.5%  { transform: rotate(-1.41deg); }
+  68.75% { transform: rotate(-1.85deg); }
+  75%    { transform: rotate(-2.00deg); }
+  81.25% { transform: rotate(-1.85deg); }
+  87.5%  { transform: rotate(-1.41deg); }
+  93.75% { transform: rotate(-0.77deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes idle-head {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.38deg); }
+  12.5%  { transform: rotate(0.71deg); }
+  18.75% { transform: rotate(0.92deg); }
+  25%    { transform: rotate(1.00deg); }
+  31.25% { transform: rotate(0.92deg); }
+  37.5%  { transform: rotate(0.71deg); }
+  43.75% { transform: rotate(0.38deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.38deg); }
+  62.5%  { transform: rotate(-0.71deg); }
+  68.75% { transform: rotate(-0.92deg); }
+  75%    { transform: rotate(-1.00deg); }
+  81.25% { transform: rotate(-0.92deg); }
+  87.5%  { transform: rotate(-0.71deg); }
+  93.75% { transform: rotate(-0.38deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes idle-ear-left {
+  0%     { transform: rotate(-0.70deg); }
+  6.25%  { transform: rotate(-0.43deg); }
+  12.5%  { transform: rotate(-0.21deg); }
+  18.75% { transform: rotate(-0.05deg); }
+  25%    { transform: rotate(0.00deg); }
+  31.25% { transform: rotate(-0.05deg); }
+  37.5%  { transform: rotate(-0.21deg); }
+  43.75% { transform: rotate(-0.43deg); }
+  50%    { transform: rotate(-0.70deg); }
+  56.25% { transform: rotate(-0.97deg); }
+  62.5%  { transform: rotate(-1.19deg); }
+  68.75% { transform: rotate(-1.35deg); }
+  75%    { transform: rotate(-1.40deg); }
+  81.25% { transform: rotate(-1.35deg); }
+  87.5%  { transform: rotate(-1.19deg); }
+  93.75% { transform: rotate(-0.97deg); }
+  100%   { transform: rotate(-0.70deg); }
+}
+@keyframes idle-ear-right {
+  0%     { transform: rotate(0.70deg); }
+  6.25%  { transform: rotate(0.97deg); }
+  12.5%  { transform: rotate(1.19deg); }
+  18.75% { transform: rotate(1.35deg); }
+  25%    { transform: rotate(1.40deg); }
+  31.25% { transform: rotate(1.35deg); }
+  37.5%  { transform: rotate(1.19deg); }
+  43.75% { transform: rotate(0.97deg); }
+  50%    { transform: rotate(0.70deg); }
+  56.25% { transform: rotate(0.43deg); }
+  62.5%  { transform: rotate(0.21deg); }
+  68.75% { transform: rotate(0.05deg); }
+  75%    { transform: rotate(0.00deg); }
+  81.25% { transform: rotate(0.05deg); }
+  87.5%  { transform: rotate(0.21deg); }
+  93.75% { transform: rotate(0.43deg); }
+  100%   { transform: rotate(0.70deg); }
+}
+@keyframes idle-antenna {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(1.15deg); }
+  12.5%  { transform: rotate(2.12deg); }
+  18.75% { transform: rotate(2.77deg); }
+  25%    { transform: rotate(3.00deg); }
+  31.25% { transform: rotate(2.77deg); }
+  37.5%  { transform: rotate(2.12deg); }
+  43.75% { transform: rotate(1.15deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-1.15deg); }
+  62.5%  { transform: rotate(-2.12deg); }
+  68.75% { transform: rotate(-2.77deg); }
+  75%    { transform: rotate(-3.00deg); }
+  81.25% { transform: rotate(-2.77deg); }
+  87.5%  { transform: rotate(-2.12deg); }
+  93.75% { transform: rotate(-1.15deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes idle-fluff {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.77deg); }
+  12.5%  { transform: rotate(1.41deg); }
+  18.75% { transform: rotate(1.85deg); }
+  25%    { transform: rotate(2.00deg); }
+  31.25% { transform: rotate(1.85deg); }
+  37.5%  { transform: rotate(1.41deg); }
+  43.75% { transform: rotate(0.77deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.77deg); }
+  62.5%  { transform: rotate(-1.41deg); }
+  68.75% { transform: rotate(-1.85deg); }
+  75%    { transform: rotate(-2.00deg); }
+  81.25% { transform: rotate(-1.85deg); }
+  87.5%  { transform: rotate(-1.41deg); }
+  93.75% { transform: rotate(-0.77deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+
+@keyframes sing-body {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(1.15deg); }
+  12.5%  { transform: rotate(2.12deg); }
+  18.75% { transform: rotate(2.77deg); }
+  25%    { transform: rotate(3.00deg); }
+  31.25% { transform: rotate(2.77deg); }
+  37.5%  { transform: rotate(2.12deg); }
+  43.75% { transform: rotate(1.15deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-1.15deg); }
+  62.5%  { transform: rotate(-2.12deg); }
+  68.75% { transform: rotate(-2.77deg); }
+  75%    { transform: rotate(-3.00deg); }
+  81.25% { transform: rotate(-2.77deg); }
+  87.5%  { transform: rotate(-2.12deg); }
+  93.75% { transform: rotate(-1.15deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes sing-head {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.57deg); }
+  12.5%  { transform: rotate(1.06deg); }
+  18.75% { transform: rotate(1.39deg); }
+  25%    { transform: rotate(1.50deg); }
+  31.25% { transform: rotate(1.39deg); }
+  37.5%  { transform: rotate(1.06deg); }
+  43.75% { transform: rotate(0.57deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.57deg); }
+  62.5%  { transform: rotate(-1.06deg); }
+  68.75% { transform: rotate(-1.39deg); }
+  75%    { transform: rotate(-1.50deg); }
+  81.25% { transform: rotate(-1.39deg); }
+  87.5%  { transform: rotate(-1.06deg); }
+  93.75% { transform: rotate(-0.57deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes sing-ear-left {
+  0%     { transform: rotate(-1.00deg); }
+  6.25%  { transform: rotate(-0.62deg); }
+  12.5%  { transform: rotate(-0.29deg); }
+  18.75% { transform: rotate(-0.08deg); }
+  25%    { transform: rotate(0.00deg); }
+  31.25% { transform: rotate(-0.08deg); }
+  37.5%  { transform: rotate(-0.29deg); }
+  43.75% { transform: rotate(-0.62deg); }
+  50%    { transform: rotate(-1.00deg); }
+  56.25% { transform: rotate(-1.38deg); }
+  62.5%  { transform: rotate(-1.71deg); }
+  68.75% { transform: rotate(-1.92deg); }
+  75%    { transform: rotate(-2.00deg); }
+  81.25% { transform: rotate(-1.92deg); }
+  87.5%  { transform: rotate(-1.71deg); }
+  93.75% { transform: rotate(-1.38deg); }
+  100%   { transform: rotate(-1.00deg); }
+}
+@keyframes sing-ear-right {
+  0%     { transform: rotate(1.00deg); }
+  6.25%  { transform: rotate(1.38deg); }
+  12.5%  { transform: rotate(1.71deg); }
+  18.75% { transform: rotate(1.92deg); }
+  25%    { transform: rotate(2.00deg); }
+  31.25% { transform: rotate(1.92deg); }
+  37.5%  { transform: rotate(1.71deg); }
+  43.75% { transform: rotate(1.38deg); }
+  50%    { transform: rotate(1.00deg); }
+  56.25% { transform: rotate(0.62deg); }
+  62.5%  { transform: rotate(0.29deg); }
+  68.75% { transform: rotate(0.08deg); }
+  75%    { transform: rotate(0.00deg); }
+  81.25% { transform: rotate(0.08deg); }
+  87.5%  { transform: rotate(0.29deg); }
+  93.75% { transform: rotate(0.62deg); }
+  100%   { transform: rotate(1.00deg); }
+}
+@keyframes sing-antenna {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(1.53deg); }
+  12.5%  { transform: rotate(2.83deg); }
+  18.75% { transform: rotate(3.70deg); }
+  25%    { transform: rotate(4.00deg); }
+  31.25% { transform: rotate(3.70deg); }
+  37.5%  { transform: rotate(2.83deg); }
+  43.75% { transform: rotate(1.53deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-1.53deg); }
+  62.5%  { transform: rotate(-2.83deg); }
+  68.75% { transform: rotate(-3.70deg); }
+  75%    { transform: rotate(-4.00deg); }
+  81.25% { transform: rotate(-3.70deg); }
+  87.5%  { transform: rotate(-2.83deg); }
+  93.75% { transform: rotate(-1.53deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes sing-fluff {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(1.15deg); }
+  12.5%  { transform: rotate(2.12deg); }
+  18.75% { transform: rotate(2.77deg); }
+  25%    { transform: rotate(3.00deg); }
+  31.25% { transform: rotate(2.77deg); }
+  37.5%  { transform: rotate(2.12deg); }
+  43.75% { transform: rotate(1.15deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-1.15deg); }
+  62.5%  { transform: rotate(-2.12deg); }
+  68.75% { transform: rotate(-2.77deg); }
+  75%    { transform: rotate(-3.00deg); }
+  81.25% { transform: rotate(-2.77deg); }
+  87.5%  { transform: rotate(-2.12deg); }
+  93.75% { transform: rotate(-1.15deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+
+@keyframes calm-fluff {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.77deg); }
+  12.5%  { transform: rotate(1.41deg); }
+  18.75% { transform: rotate(1.85deg); }
+  25%    { transform: rotate(2.00deg); }
+  31.25% { transform: rotate(1.85deg); }
+  37.5%  { transform: rotate(1.41deg); }
+  43.75% { transform: rotate(0.77deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.77deg); }
+  62.5%  { transform: rotate(-1.41deg); }
+  68.75% { transform: rotate(-1.85deg); }
+  75%    { transform: rotate(-2.00deg); }
+  81.25% { transform: rotate(-1.85deg); }
+  87.5%  { transform: rotate(-1.41deg); }
+  93.75% { transform: rotate(-0.77deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+
+
+/*
+  揺れ始め用：最初の1往復だけ、揺れの大きさが 0 からだんだん大きくなる（-in が付いたもの）
+  止まっていたキャラクターが急に揺れ出さないようにするため。1往復目が終わると、ふつうの揺れに続けてつながる
+*/
+@keyframes idle-body-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.05deg); }
+  12.5%  { transform: rotate(0.18deg); }
+  18.75% { transform: rotate(0.35deg); }
+  25%    { transform: rotate(0.50deg); }
+  31.25% { transform: rotate(0.58deg); }
+  37.5%  { transform: rotate(0.53deg); }
+  43.75% { transform: rotate(0.33deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.43deg); }
+  62.5%  { transform: rotate(-0.88deg); }
+  68.75% { transform: rotate(-1.27deg); }
+  75%    { transform: rotate(-1.50deg); }
+  81.25% { transform: rotate(-1.50deg); }
+  87.5%  { transform: rotate(-1.24deg); }
+  93.75% { transform: rotate(-0.72deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes idle-head-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.02deg); }
+  12.5%  { transform: rotate(0.09deg); }
+  18.75% { transform: rotate(0.17deg); }
+  25%    { transform: rotate(0.25deg); }
+  31.25% { transform: rotate(0.29deg); }
+  37.5%  { transform: rotate(0.27deg); }
+  43.75% { transform: rotate(0.17deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.22deg); }
+  62.5%  { transform: rotate(-0.44deg); }
+  68.75% { transform: rotate(-0.64deg); }
+  75%    { transform: rotate(-0.75deg); }
+  81.25% { transform: rotate(-0.75deg); }
+  87.5%  { transform: rotate(-0.62deg); }
+  93.75% { transform: rotate(-0.36deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes idle-ear-left-in {
+  0%     { transform: rotate(-0.00deg); }
+  6.25%  { transform: rotate(-0.03deg); }
+  12.5%  { transform: rotate(-0.03deg); }
+  18.75% { transform: rotate(-0.01deg); }
+  25%    { transform: rotate(0.00deg); }
+  31.25% { transform: rotate(-0.02deg); }
+  37.5%  { transform: rotate(-0.08deg); }
+  43.75% { transform: rotate(-0.19deg); }
+  50%    { transform: rotate(-0.35deg); }
+  56.25% { transform: rotate(-0.54deg); }
+  62.5%  { transform: rotate(-0.75deg); }
+  68.75% { transform: rotate(-0.93deg); }
+  75%    { transform: rotate(-1.05deg); }
+  81.25% { transform: rotate(-1.09deg); }
+  87.5%  { transform: rotate(-1.05deg); }
+  93.75% { transform: rotate(-0.91deg); }
+  100%   { transform: rotate(-0.70deg); }
+}
+@keyframes idle-ear-right-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.06deg); }
+  12.5%  { transform: rotate(0.15deg); }
+  18.75% { transform: rotate(0.25deg); }
+  25%    { transform: rotate(0.35deg); }
+  31.25% { transform: rotate(0.42deg); }
+  37.5%  { transform: rotate(0.45deg); }
+  43.75% { transform: rotate(0.42deg); }
+  50%    { transform: rotate(0.35deg); }
+  56.25% { transform: rotate(0.24deg); }
+  62.5%  { transform: rotate(0.13deg); }
+  68.75% { transform: rotate(0.04deg); }
+  75%    { transform: rotate(0.00deg); }
+  81.25% { transform: rotate(0.04deg); }
+  87.5%  { transform: rotate(0.18deg); }
+  93.75% { transform: rotate(0.41deg); }
+  100%   { transform: rotate(0.70deg); }
+}
+@keyframes idle-antenna-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.07deg); }
+  12.5%  { transform: rotate(0.27deg); }
+  18.75% { transform: rotate(0.52deg); }
+  25%    { transform: rotate(0.75deg); }
+  31.25% { transform: rotate(0.87deg); }
+  37.5%  { transform: rotate(0.80deg); }
+  43.75% { transform: rotate(0.50deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.65deg); }
+  62.5%  { transform: rotate(-1.33deg); }
+  68.75% { transform: rotate(-1.91deg); }
+  75%    { transform: rotate(-2.25deg); }
+  81.25% { transform: rotate(-2.25deg); }
+  87.5%  { transform: rotate(-1.86deg); }
+  93.75% { transform: rotate(-1.08deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes idle-fluff-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.05deg); }
+  12.5%  { transform: rotate(0.18deg); }
+  18.75% { transform: rotate(0.35deg); }
+  25%    { transform: rotate(0.50deg); }
+  31.25% { transform: rotate(0.58deg); }
+  37.5%  { transform: rotate(0.53deg); }
+  43.75% { transform: rotate(0.33deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.43deg); }
+  62.5%  { transform: rotate(-0.88deg); }
+  68.75% { transform: rotate(-1.27deg); }
+  75%    { transform: rotate(-1.50deg); }
+  81.25% { transform: rotate(-1.50deg); }
+  87.5%  { transform: rotate(-1.24deg); }
+  93.75% { transform: rotate(-0.72deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+
+@keyframes sing-body-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.07deg); }
+  12.5%  { transform: rotate(0.27deg); }
+  18.75% { transform: rotate(0.52deg); }
+  25%    { transform: rotate(0.75deg); }
+  31.25% { transform: rotate(0.87deg); }
+  37.5%  { transform: rotate(0.80deg); }
+  43.75% { transform: rotate(0.50deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.65deg); }
+  62.5%  { transform: rotate(-1.33deg); }
+  68.75% { transform: rotate(-1.91deg); }
+  75%    { transform: rotate(-2.25deg); }
+  81.25% { transform: rotate(-2.25deg); }
+  87.5%  { transform: rotate(-1.86deg); }
+  93.75% { transform: rotate(-1.08deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes sing-head-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.04deg); }
+  12.5%  { transform: rotate(0.13deg); }
+  18.75% { transform: rotate(0.26deg); }
+  25%    { transform: rotate(0.38deg); }
+  31.25% { transform: rotate(0.43deg); }
+  37.5%  { transform: rotate(0.40deg); }
+  43.75% { transform: rotate(0.25deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.32deg); }
+  62.5%  { transform: rotate(-0.66deg); }
+  68.75% { transform: rotate(-0.95deg); }
+  75%    { transform: rotate(-1.12deg); }
+  81.25% { transform: rotate(-1.13deg); }
+  87.5%  { transform: rotate(-0.93deg); }
+  93.75% { transform: rotate(-0.54deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes sing-ear-left-in {
+  0%     { transform: rotate(-0.00deg); }
+  6.25%  { transform: rotate(-0.04deg); }
+  12.5%  { transform: rotate(-0.04deg); }
+  18.75% { transform: rotate(-0.01deg); }
+  25%    { transform: rotate(0.00deg); }
+  31.25% { transform: rotate(-0.02deg); }
+  37.5%  { transform: rotate(-0.11deg); }
+  43.75% { transform: rotate(-0.27deg); }
+  50%    { transform: rotate(-0.50deg); }
+  56.25% { transform: rotate(-0.78deg); }
+  62.5%  { transform: rotate(-1.07deg); }
+  68.75% { transform: rotate(-1.32deg); }
+  75%    { transform: rotate(-1.50deg); }
+  81.25% { transform: rotate(-1.56deg); }
+  87.5%  { transform: rotate(-1.49deg); }
+  93.75% { transform: rotate(-1.30deg); }
+  100%   { transform: rotate(-1.00deg); }
+}
+@keyframes sing-ear-right-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.09deg); }
+  12.5%  { transform: rotate(0.21deg); }
+  18.75% { transform: rotate(0.36deg); }
+  25%    { transform: rotate(0.50deg); }
+  31.25% { transform: rotate(0.60deg); }
+  37.5%  { transform: rotate(0.64deg); }
+  43.75% { transform: rotate(0.60deg); }
+  50%    { transform: rotate(0.50deg); }
+  56.25% { transform: rotate(0.35deg); }
+  62.5%  { transform: rotate(0.18deg); }
+  68.75% { transform: rotate(0.05deg); }
+  75%    { transform: rotate(0.00deg); }
+  81.25% { transform: rotate(0.06deg); }
+  87.5%  { transform: rotate(0.26deg); }
+  93.75% { transform: rotate(0.58deg); }
+  100%   { transform: rotate(1.00deg); }
+}
+@keyframes sing-antenna-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.10deg); }
+  12.5%  { transform: rotate(0.35deg); }
+  18.75% { transform: rotate(0.69deg); }
+  25%    { transform: rotate(1.00deg); }
+  31.25% { transform: rotate(1.15deg); }
+  37.5%  { transform: rotate(1.06deg); }
+  43.75% { transform: rotate(0.67deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.86deg); }
+  62.5%  { transform: rotate(-1.77deg); }
+  68.75% { transform: rotate(-2.54deg); }
+  75%    { transform: rotate(-3.00deg); }
+  81.25% { transform: rotate(-3.00deg); }
+  87.5%  { transform: rotate(-2.47deg); }
+  93.75% { transform: rotate(-1.44deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+@keyframes sing-fluff-in {
+  0%     { transform: rotate(0.00deg); }
+  6.25%  { transform: rotate(0.07deg); }
+  12.5%  { transform: rotate(0.27deg); }
+  18.75% { transform: rotate(0.52deg); }
+  25%    { transform: rotate(0.75deg); }
+  31.25% { transform: rotate(0.87deg); }
+  37.5%  { transform: rotate(0.80deg); }
+  43.75% { transform: rotate(0.50deg); }
+  50%    { transform: rotate(0.00deg); }
+  56.25% { transform: rotate(-0.65deg); }
+  62.5%  { transform: rotate(-1.33deg); }
+  68.75% { transform: rotate(-1.91deg); }
+  75%    { transform: rotate(-2.25deg); }
+  81.25% { transform: rotate(-2.25deg); }
+  87.5%  { transform: rotate(-1.86deg); }
+  93.75% { transform: rotate(-1.08deg); }
+  100%   { transform: rotate(-0.00deg); }
+}
+
+
+/* =========================================================
+   ① ふだん（state-idle）：まばたき ＋ 小さめのゆらゆら
+   ========================================================= */
+.state-idle .sway-wrap { animation: idle-body-in 4s linear, idle-body 4s linear 4s infinite; }
+.state-idle .head      { animation: idle-head-in 4s linear, idle-head 4s linear 4s infinite; }
+.state-idle .ear-left  { animation: idle-ear-left-in  4s linear 0.25s, idle-ear-left  4s linear 4.25s infinite; }
+.state-idle .ear-right { animation: idle-ear-right-in 4s linear 0.25s, idle-ear-right 4s linear 4.25s infinite; }
+.state-idle .antenna   { animation: idle-antenna-in   4s linear 0.4s,  idle-antenna   4s linear 4.4s infinite; }
+.state-idle .fluff     { animation: idle-fluff-in     4s linear 0.3s,  idle-fluff     4s linear 4.3s infinite; }
+.state-idle .m-small   { opacity: 1; }
+
+/*
+  ふだんの口：JS が chara に「mouth-shut」というクラスをランダムに付けたり外したりする
+  付いている間は口を閉じる（mouth_closed）、外れている間は口を開ける（mouth_small）
+*/
+.state-idle.mouth-shut .m-small  { opacity: 0; }
+.state-idle.mouth-shut .m-closed { opacity: 1; }
+
+/* まばたき（4.7秒に1回）：normal → half → closed → half → normal を一瞬で */
+@keyframes blink-normal { 0% { opacity: 1; } 90% { opacity: 0; } 96% { opacity: 1; } }
+@keyframes blink-half   { 0% { opacity: 0; } 90% { opacity: 1; } 92% { opacity: 0; } 94% { opacity: 1; } 96% { opacity: 0; } }
+@keyframes blink-closed { 0% { opacity: 0; } 92% { opacity: 1; } 94% { opacity: 0; } }
+.state-idle .e-normal,  .state-breath .e-normal,  .state-notice .e-normal  { animation: blink-normal 4.7s step-end infinite; }
+.state-idle .e-half,    .state-breath .e-half,    .state-notice .e-half    { animation: blink-half   4.7s step-end infinite; }
+.state-idle .e-closed,  .state-breath .e-closed,  .state-notice .e-closed  { animation: blink-closed 4.7s step-end infinite; }
+
+
+/* =========================================================
+   ② クリックしたとき（state-laugh・2.6秒で1回）：笑う ＋ 音符
+   ========================================================= */
+/* 目：つぶした目(0-4) → 笑い目(4-72) → 半目(72-78) → つぶした目(78-84) → normal(84-100) */
+@keyframes lg-sq     { 0% { opacity: 1; } 4% { opacity: 0; } 78% { opacity: 1; } 84% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes lg-laugh  { 0% { opacity: 0; } 4% { opacity: 1; } 72% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes lg-half   { 0% { opacity: 0; } 72% { opacity: 1; } 78% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes lg-normal { 0% { opacity: 0; } 84% { opacity: 1; } 100% { opacity: 1; } }
+.state-laugh .e-sq-l, .state-laugh .e-sq-r { animation: lg-sq 2.6s step-end forwards; }
+.state-laugh .e-laugh  { animation: lg-laugh  2.6s step-end forwards; }
+.state-laugh .e-half   { animation: lg-half   2.6s step-end forwards; }
+.state-laugh .e-normal { animation: lg-normal 2.6s step-end forwards; }
+.state-laugh .m-small  { opacity: 1; }
+
+/* 触角とふわふわ：笑った瞬間にぴょこっと揺れる（ふわふわは少し遅れて小さく） */
+/* 触角は、まず反時計回り（先が上に上がる向き）にぴょこっと上がり、少し下に行き過ぎてから止まる */
+@keyframes lg-antenna { 0% { transform: rotate(0deg); } 8% { transform: rotate(-6deg); } 18% { transform: rotate(3deg); } 28%, 100% { transform: rotate(0deg); } }
+@keyframes lg-fluff   { 0% { transform: rotate(0deg); } 12% { transform: rotate(-3deg); } 22% { transform: rotate(1.5deg); } 32%, 100% { transform: rotate(0deg); } }
+/*
+  体：足元を中心に、うれしくて弾むように上下に動く（いったん縮んでから伸び上がり、もう一度小さく弾む）
+  translateY(-2%) は少し上に浮く（300px表示で約6px）、scaleY は縦の伸び縮み
+*/
+@keyframes lg-body {
+  0%        { transform: translateY(0) scaleY(1); }
+  8%        { transform: translateY(0) scaleY(0.97); }
+  17%       { transform: translateY(-2%) scaleY(1.02); }
+  27%       { transform: translateY(0) scaleY(0.98); }
+  35%       { transform: translateY(-1%) scaleY(1.01); }
+  45%, 100% { transform: translateY(0) scaleY(1); }
+}
+.state-laugh .sway-wrap { animation: lg-body 2.6s ease-in-out forwards; }
+.state-laugh .antenna { animation: lg-antenna 2.6s ease-in-out forwards; }
+.state-laugh .fluff   { animation: lg-fluff   2.6s ease-in-out forwards; }
+
+/*
+  ハートの吹き出し：小さい大きさから「ぽんっ」とふくらみ、少し大きくなりすぎてから元の大きさに戻る。
+  しばらく出ていて、最後は少し小さくなりながら消える
+*/
+@keyframes lg-bubble {
+  0%        { opacity: 0; transform: scale(0.6); }
+  8%        { opacity: 1; transform: scale(1.1); }
+  14%       { transform: scale(1); }
+  70%       { opacity: 1; transform: scale(1); }
+  82%, 100% { opacity: 0; transform: scale(0.9); }
+}
+.state-laugh .fx-bubble-heart { animation: lg-bubble 2.6s ease-out forwards; }
+
+
+/* =========================================================
+   ③ しばらくすると（state-breath）：大きめの呼吸。吐いて小さくなったときは口を閉じる
+   ========================================================= */
+/*
+  1回の呼吸は4秒：0% 吐ききり → 50% 吸いきり → 100% 吐ききり
+  体：足元を中心に縦に3%伸びる（300px表示で頭のてっぺんが約10px上がる）
+  頭と手・時計：首のあたりを中心に横に1.5%ふくらむ（体には付けないので、足の幅は変わらない）
+*/
+@keyframes br-body  { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.03); } }
+@keyframes br-x     { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(1.015); } }
+@keyframes br-mouth { 0%, 100% { transform: scale(1); }  50% { transform: scale(1.12); } }
+.state-breath .sway-wrap { animation: br-body 4s ease-in-out infinite; }
+.state-breath .head,
+.state-breath .hands     { animation: br-x 4s ease-in-out infinite; }
+.state-breath .fluff     { animation: calm-fluff 3.6s linear infinite; }
+
+/* 口：吐いて小さくなっている間（85%〜次の15%）は closed、それ以外は small（吸うときに少し大きくなる） */
+@keyframes br-show-small  { 0% { opacity: 0; } 15% { opacity: 1; } 85% { opacity: 0; } }
+@keyframes br-show-closed { 0% { opacity: 1; } 15% { opacity: 0; } 85% { opacity: 1; } }
+.state-breath .m-small {
+  transform-origin: 52.7% 65.8%;
+  animation: br-show-small 4s step-end infinite, br-mouth 4s ease-in-out infinite;
+}
+.state-breath .m-closed { animation: br-show-closed 4s step-end infinite; }
+
+
+/* =========================================================
+   ④ ランダム（state-sing・12秒）：歌う
+   ========================================================= */
+.state-sing .sway-wrap { animation: sing-body-in 4s linear, sing-body 4s linear 4s infinite; }
+.state-sing .head      { animation: sing-head-in 4s linear, sing-head 4s linear 4s infinite; }
+.state-sing .ear-left  { animation: sing-ear-left-in  4s linear 0.25s, sing-ear-left  4s linear 4.25s infinite; }
+.state-sing .ear-right { animation: sing-ear-right-in 4s linear 0.25s, sing-ear-right 4s linear 4.25s infinite; }
+.state-sing .antenna   { animation: sing-antenna-in   4s linear 0.4s,  sing-antenna   4s linear 4.4s infinite; }
+.state-sing .fluff     { animation: sing-fluff-in     4s linear 0.3s,  sing-fluff     4s linear 4.3s infinite; }
+
+/*
+  目（12秒）：閉じ(0-50) → 半目つぶし → 半目 → 開いた目つぶし → 開く(53.5-66、約1.5秒)
+  → 開いた目つぶし → 半目 → 半目つぶし → 閉じ(69.5-100)
+*/
+@keyframes sg-closed { 0% { opacity: 1; } 50% { opacity: 0; } 69.5% { opacity: 1; } }
+@keyframes sg-hsq    { 0% { opacity: 0; } 50% { opacity: 1; } 51% { opacity: 0; } 68.5% { opacity: 1; } 69.5% { opacity: 0; } }
+@keyframes sg-half   { 0% { opacity: 0; } 51% { opacity: 1; } 52.5% { opacity: 0; } 67% { opacity: 1; } 68.5% { opacity: 0; } }
+@keyframes sg-sq     { 0% { opacity: 0; } 52.5% { opacity: 1; } 53.5% { opacity: 0; } 66% { opacity: 1; } 67% { opacity: 0; } }
+@keyframes sg-normal { 0% { opacity: 0; } 53.5% { opacity: 1; } 66% { opacity: 0; } }
+/*
+  -7.5s：目のアニメーションを7.5秒（62.5%）進めたところから始める
+  → 始めは目が開いていて、約0.4秒で「つぶした目 → 半目 → 半目つぶし → 閉じ」と閉じていく
+  → 12秒たつとちょうど同じところに戻るので、最後は目を開けた状態で終わり、ふだんの目につながる
+*/
+.state-sing .e-closed { animation: sg-closed 12s step-end -7.5s infinite; }
+.state-sing .e-hsq-l, .state-sing .e-hsq-r { animation: sg-hsq 12s step-end -7.5s infinite; }
+.state-sing .e-half   { animation: sg-half   12s step-end -7.5s infinite; }
+.state-sing .e-sq-l, .state-sing .e-sq-r   { animation: sg-sq 12s step-end -7.5s infinite; }
+.state-sing .e-normal { animation: sg-normal 12s step-end -7.5s infinite; }
+
+/* 口（4秒＝ゆらゆら1往復）：ゆっくり、長さを少しずつ変えて開け閉めする */
+@keyframes sg-m-closed { 0% { opacity: 1; } 10% { opacity: 0; } 30% { opacity: 1; } 40% { opacity: 0; } 55% { opacity: 1; } 62% { opacity: 0; } 85% { opacity: 1; } }
+@keyframes sg-m-small  { 0% { opacity: 0; } 10% { opacity: 1; } 30% { opacity: 0; } 40% { opacity: 1; } 55% { opacity: 0; } 62% { opacity: 1; } 85% { opacity: 0; } }
+.state-sing .m-closed { animation: sg-m-closed 4s step-end infinite; }
+.state-sing .m-small  { animation: sg-m-small  4s step-end infinite; }
+
+/* 顔の中身：口が開いている間だけ、なめらかに少し下がる */
+@keyframes sg-face {
+  0%, 8%    { transform: translateY(0); }
+  14%, 28%  { transform: translateY(0.25%); }
+  34%, 38%  { transform: translateY(0); }
+  44%, 53%  { transform: translateY(0.25%); }
+  58%, 60%  { transform: translateY(0); }
+  66%, 83%  { transform: translateY(0.25%); }
+  89%, 100% { transform: translateY(0); }
+}
+.state-sing .face { animation: sg-face 4s ease-in-out infinite; }
+
+/* 音符：左（0-50%）と右（50-100%）が交互に、少しゆれながら浮かぶ */
+@keyframes sg-note-l {
+  0%        { opacity: 0; transform: translate(0, 2%) rotate(0deg); }
+  8%        { opacity: 1; }
+  25%       { transform: translate(-0.5%, -2%) rotate(-6deg); }
+  38%       { opacity: 1; }
+  50%, 100% { opacity: 0; transform: translate(0.5%, -6%) rotate(4deg); }
+}
+@keyframes sg-note-r {
+  0%, 50%   { opacity: 0; transform: translate(0, 2%) rotate(0deg); }
+  58%       { opacity: 1; }
+  75%       { transform: translate(0.5%, -2%) rotate(6deg); }
+  88%       { opacity: 1; }
+  100%      { opacity: 0; transform: translate(-0.5%, -6%) rotate(-4deg); }
+}
+.state-sing .fx-note-l { animation: sg-note-l 4s ease-in-out infinite; }
+.state-sing .fx-note-r { animation: sg-note-r 4s ease-in-out infinite; }
+
+
+/* =========================================================
+   ⑤ ランダム（state-sleep・22秒で1回）：眠って、Z が出て、起きる
+   ========================================================= */
+/*
+  体（22秒で1回）：伸びずに、眠りに落ちるときに足元を中心に少し沈み（縦97%につぶれる）、
+  眠っている間は、そのつぶれた形のままゆっくり呼吸する（95.5% ↔ 98.5%、1回約3.9秒）。
+  起きるときに元の大きさ（100%）に戻る
+*/
+@keyframes sl-body {
+  0%     { transform: scaleY(1); }
+  10%    { transform: scaleY(1); }
+  22%    { transform: scaleY(0.97); }
+  30.83% { transform: scaleY(0.955); }
+  39.67% { transform: scaleY(0.985); }
+  48.5%  { transform: scaleY(0.955); }
+  57.33% { transform: scaleY(0.985); }
+  66.17% { transform: scaleY(0.955); }
+  75%    { transform: scaleY(0.97); }
+  87%    { transform: scaleY(1); }
+  100%   { transform: scaleY(1); }
+}
+.state-sleep .sway-wrap { animation: sl-body 22s ease-in-out forwards; }
+
+/*
+  目：normal(0-10) → つぶし(10-12) → 半目(12-16) → 半目つぶし(16-18) → 閉じ(18-79)
+  → 半目つぶし(79-81) → 半目(81-85) → つぶし(85-87) → normal(87-100)
+*/
+@keyframes sl-normal { 0% { opacity: 1; } 10% { opacity: 0; } 87% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes sl-sq     { 0% { opacity: 0; } 10% { opacity: 1; } 12% { opacity: 0; } 85% { opacity: 1; } 87% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes sl-half   { 0% { opacity: 0; } 12% { opacity: 1; } 16% { opacity: 0; } 81% { opacity: 1; } 85% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes sl-hsq    { 0% { opacity: 0; } 16% { opacity: 1; } 18% { opacity: 0; } 79% { opacity: 1; } 81% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes sl-closed { 0% { opacity: 0; } 18% { opacity: 1; } 79% { opacity: 0; } 100% { opacity: 0; } }
+.state-sleep .e-normal { animation: sl-normal 22s step-end forwards; }
+.state-sleep .e-sq-l, .state-sleep .e-sq-r   { animation: sl-sq  22s step-end forwards; }
+.state-sleep .e-half   { animation: sl-half   22s step-end forwards; }
+.state-sleep .e-hsq-l, .state-sleep .e-hsq-r { animation: sl-hsq 22s step-end forwards; }
+.state-sleep .e-closed { animation: sl-closed 22s step-end forwards; }
+
+/* 口：目が閉じている間（18-79）だけ closed */
+@keyframes sl-m-small  { 0% { opacity: 1; } 18% { opacity: 0; } 79% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes sl-m-closed { 0% { opacity: 0; } 18% { opacity: 1; } 79% { opacity: 0; } 100% { opacity: 0; } }
+.state-sleep .m-small  { animation: sl-m-small  22s step-end forwards; }
+.state-sleep .m-closed { animation: sl-m-closed 22s step-end forwards; }
+
+/* 眠っている間：耳がしぼむ・顔が少し下がる・触角とふわふわが垂れる */
+/*
+  耳：寝ている間は、呼吸に合わせて動く。吸うときは少し持ち上がり、吐くときは少ししぼむ。
+  どれも内側にだけ動くので、付け根のすき間は広がらない
+*/
+@keyframes sl-ear-left {
+  0%     { transform: rotate(0deg) scale(1); }
+  10%    { transform: rotate(0deg) scale(1); }
+  22%    { transform: rotate(-2deg) scale(0.96); }
+  30.83% { transform: rotate(-3deg) scale(0.95); }
+  39.67% { transform: rotate(-1deg) scale(0.975); }
+  48.5%  { transform: rotate(-3deg) scale(0.95); }
+  57.33% { transform: rotate(-1deg) scale(0.975); }
+  66.17% { transform: rotate(-3deg) scale(0.95); }
+  75%    { transform: rotate(-2deg) scale(0.96); }
+  87%    { transform: rotate(0deg) scale(1); }
+  100%   { transform: rotate(0deg) scale(1); }
+}
+@keyframes sl-ear-right {
+  0%     { transform: rotate(0deg) scale(1); }
+  10%    { transform: rotate(0deg) scale(1); }
+  22%    { transform: rotate(2deg) scale(0.96); }
+  30.83% { transform: rotate(3deg) scale(0.95); }
+  39.67% { transform: rotate(1deg) scale(0.975); }
+  48.5%  { transform: rotate(3deg) scale(0.95); }
+  57.33% { transform: rotate(1deg) scale(0.975); }
+  66.17% { transform: rotate(3deg) scale(0.95); }
+  75%    { transform: rotate(2deg) scale(0.96); }
+  87%    { transform: rotate(0deg) scale(1); }
+  100%   { transform: rotate(0deg) scale(1); }
+}
+@keyframes sl-face      { 0%, 10% { transform: translateY(0); } 22%, 75% { transform: translateY(1%); } 87%, 100% { transform: translateY(0); } }
+/* 触角とふわふわ：耳と同じく呼吸に合わせて、吸うときは少し持ち上がり、吐くときはもう少し垂れる */
+@keyframes sl-antenna {
+  0%     { transform: rotate(0deg); }
+  10%    { transform: rotate(0deg); }
+  22%    { transform: rotate(8deg); }
+  30.83% { transform: rotate(10deg); }
+  39.67% { transform: rotate(6deg); }
+  48.5%  { transform: rotate(10deg); }
+  57.33% { transform: rotate(6deg); }
+  66.17% { transform: rotate(10deg); }
+  75%    { transform: rotate(8deg); }
+  87%    { transform: rotate(0deg); }
+  100%   { transform: rotate(0deg); }
+}
+@keyframes sl-fluff {
+  0%     { transform: rotate(0deg); }
+  10%    { transform: rotate(0deg); }
+  22%    { transform: rotate(-4deg); }
+  30.83% { transform: rotate(-5.5deg); }
+  39.67% { transform: rotate(-2.5deg); }
+  48.5%  { transform: rotate(-5.5deg); }
+  57.33% { transform: rotate(-2.5deg); }
+  66.17% { transform: rotate(-5.5deg); }
+  75%    { transform: rotate(-4deg); }
+  87%    { transform: rotate(0deg); }
+  100%   { transform: rotate(0deg); }
+}
+.state-sleep .ear-left  { animation: sl-ear-left  22s ease-in-out forwards; }
+.state-sleep .ear-right { animation: sl-ear-right 22s ease-in-out forwards; }
+.state-sleep .face      { animation: sl-face      22s ease-in-out forwards; }
+.state-sleep .antenna   { animation: sl-antenna   22s ease-in-out forwards; }
+.state-sleep .fluff     { animation: sl-fluff     22s ease-in-out forwards; }
+
+/* Z：Z(25-35) → ZZ(35-45) → ZZZ(45-75) と1つずつ増えて消える。Z の箱はふわふわ上下する */
+@keyframes sl-z1 { 0% { opacity: 0; } 25% { opacity: 1; } 35% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes sl-z2 { 0% { opacity: 0; } 35% { opacity: 1; } 45% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes sl-z3 { 0% { opacity: 0; } 45% { opacity: 1; } 75% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes sl-z-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5%); } }
+.state-sleep .fx-z1 { animation: sl-z1 22s step-end forwards; }
+.state-sleep .fx-z2 { animation: sl-z2 22s step-end forwards; }
+.state-sleep .fx-z3 { animation: sl-z3 22s step-end forwards; }
+.state-sleep .fx-z  { animation: sl-z-float 3s ease-in-out infinite; }
+
+
+/* =========================================================
+   ⑥ お知らせ（state-notice・6秒で1回）：「！」の吹き出しを出して、しゃべる
+   ========================================================= */
+/*
+  口：mouth_closed と mouth_small を、長さを変えながら交互に切り替える（しゃべると同じリズム）
+  1コマ0.17〜0.33秒くらい。ときどき閉じたまま0.7〜0.8秒止まる（息つぎ）
+*/
+@keyframes nt-m-closed {
+  0%     { opacity: 1; }
+  3.46%  { opacity: 0; }
+  7.62%  { opacity: 1; }
+  10.39% { opacity: 0; }
+  15.47% { opacity: 1; }
+  18.71% { opacity: 0; }
+  22.4%  { opacity: 1; }
+  33.95% { opacity: 0; }
+  38.57% { opacity: 1; }
+  41.34% { opacity: 0; }
+  44.57% { opacity: 1; }
+  48.27% { opacity: 0; }
+  53.81% { opacity: 1; }
+  56.58% { opacity: 0; }
+  60.74% { opacity: 1; }
+  74.6%  { opacity: 0; }
+  78.29% { opacity: 1; }
+  81.52% { opacity: 0; }
+  86.14% { opacity: 1; }
+  88.91% { opacity: 0; }
+  93.07% { opacity: 1; }
+  100%   { opacity: 1; }
+}
+@keyframes nt-m-small {
+  0%     { opacity: 0; }
+  3.46%  { opacity: 1; }
+  7.62%  { opacity: 0; }
+  10.39% { opacity: 1; }
+  15.47% { opacity: 0; }
+  18.71% { opacity: 1; }
+  22.4%  { opacity: 0; }
+  33.95% { opacity: 1; }
+  38.57% { opacity: 0; }
+  41.34% { opacity: 1; }
+  44.57% { opacity: 0; }
+  48.27% { opacity: 1; }
+  53.81% { opacity: 0; }
+  56.58% { opacity: 1; }
+  60.74% { opacity: 0; }
+  74.6%  { opacity: 1; }
+  78.29% { opacity: 0; }
+  81.52% { opacity: 1; }
+  86.14% { opacity: 0; }
+  88.91% { opacity: 1; }
+  93.07% { opacity: 0; }
+  100%   { opacity: 0; }
+}
+.state-notice .m-closed { animation: nt-m-closed 6s step-end forwards; }
+.state-notice .m-small  { animation: nt-m-small  6s step-end forwards; }
+
+/* 顔の中身と頭：口が開いているときだけ、なめらかに少し下がる（あごを動かしてしゃべっているように） */
+@keyframes nt-face {
+  0%     { transform: translateY(0%); }
+  3.46%  { transform: translateY(0.25%); }
+  7.62%  { transform: translateY(0%); }
+  10.39% { transform: translateY(0.25%); }
+  15.47% { transform: translateY(0%); }
+  18.71% { transform: translateY(0.25%); }
+  22.4%  { transform: translateY(0%); }
+  33.95% { transform: translateY(0.25%); }
+  38.57% { transform: translateY(0%); }
+  41.34% { transform: translateY(0.25%); }
+  44.57% { transform: translateY(0%); }
+  48.27% { transform: translateY(0.25%); }
+  53.81% { transform: translateY(0%); }
+  56.58% { transform: translateY(0.25%); }
+  60.74% { transform: translateY(0%); }
+  74.6%  { transform: translateY(0.25%); }
+  78.29% { transform: translateY(0%); }
+  81.52% { transform: translateY(0.25%); }
+  86.14% { transform: translateY(0%); }
+  88.91% { transform: translateY(0.25%); }
+  93.07% { transform: translateY(0%); }
+  100%   { transform: translateY(0%); }
+}
+@keyframes nt-head {
+  0%     { transform: translateY(0%); }
+  3.46%  { transform: translateY(0.12%); }
+  7.62%  { transform: translateY(0%); }
+  10.39% { transform: translateY(0.12%); }
+  15.47% { transform: translateY(0%); }
+  18.71% { transform: translateY(0.12%); }
+  22.4%  { transform: translateY(0%); }
+  33.95% { transform: translateY(0.12%); }
+  38.57% { transform: translateY(0%); }
+  41.34% { transform: translateY(0.12%); }
+  44.57% { transform: translateY(0%); }
+  48.27% { transform: translateY(0.12%); }
+  53.81% { transform: translateY(0%); }
+  56.58% { transform: translateY(0.12%); }
+  60.74% { transform: translateY(0%); }
+  74.6%  { transform: translateY(0.12%); }
+  78.29% { transform: translateY(0%); }
+  81.52% { transform: translateY(0.12%); }
+  86.14% { transform: translateY(0%); }
+  88.91% { transform: translateY(0.12%); }
+  93.07% { transform: translateY(0%); }
+  100%   { transform: translateY(0%); }
+}
+.state-notice .face { animation: nt-face 6s ease-in-out forwards; }
+.state-notice .head { animation: nt-head 6s ease-in-out forwards; }
+
+/*
+  耳・触角・ふわふわ：口が開くたびに、少し遅れて（0.08秒）小さく揺れる
+  耳は内側にだけ1.5度、触角は2.5度（先が下がる向き）、ふわふわは1.5度
+*/
+@keyframes nt-ear-left {
+  0%     { transform: rotate(0deg); }
+  3.46%  { transform: rotate(-1.5deg); }
+  7.62%  { transform: rotate(0deg); }
+  10.39% { transform: rotate(-1.5deg); }
+  15.47% { transform: rotate(0deg); }
+  18.71% { transform: rotate(-1.5deg); }
+  22.4%  { transform: rotate(0deg); }
+  33.95% { transform: rotate(-1.5deg); }
+  38.57% { transform: rotate(0deg); }
+  41.34% { transform: rotate(-1.5deg); }
+  44.57% { transform: rotate(0deg); }
+  48.27% { transform: rotate(-1.5deg); }
+  53.81% { transform: rotate(0deg); }
+  56.58% { transform: rotate(-1.5deg); }
+  60.74% { transform: rotate(0deg); }
+  74.6%  { transform: rotate(-1.5deg); }
+  78.29% { transform: rotate(0deg); }
+  81.52% { transform: rotate(-1.5deg); }
+  86.14% { transform: rotate(0deg); }
+  88.91% { transform: rotate(-1.5deg); }
+  93.07% { transform: rotate(0deg); }
+  100%   { transform: rotate(0deg); }
+}
+@keyframes nt-ear-right {
+  0%     { transform: rotate(0deg); }
+  3.46%  { transform: rotate(1.5deg); }
+  7.62%  { transform: rotate(0deg); }
+  10.39% { transform: rotate(1.5deg); }
+  15.47% { transform: rotate(0deg); }
+  18.71% { transform: rotate(1.5deg); }
+  22.4%  { transform: rotate(0deg); }
+  33.95% { transform: rotate(1.5deg); }
+  38.57% { transform: rotate(0deg); }
+  41.34% { transform: rotate(1.5deg); }
+  44.57% { transform: rotate(0deg); }
+  48.27% { transform: rotate(1.5deg); }
+  53.81% { transform: rotate(0deg); }
+  56.58% { transform: rotate(1.5deg); }
+  60.74% { transform: rotate(0deg); }
+  74.6%  { transform: rotate(1.5deg); }
+  78.29% { transform: rotate(0deg); }
+  81.52% { transform: rotate(1.5deg); }
+  86.14% { transform: rotate(0deg); }
+  88.91% { transform: rotate(1.5deg); }
+  93.07% { transform: rotate(0deg); }
+  100%   { transform: rotate(0deg); }
+}
+@keyframes nt-antenna {
+  0%     { transform: rotate(0deg); }
+  3.46%  { transform: rotate(2.5deg); }
+  7.62%  { transform: rotate(0deg); }
+  10.39% { transform: rotate(2.5deg); }
+  15.47% { transform: rotate(0deg); }
+  18.71% { transform: rotate(2.5deg); }
+  22.4%  { transform: rotate(0deg); }
+  33.95% { transform: rotate(2.5deg); }
+  38.57% { transform: rotate(0deg); }
+  41.34% { transform: rotate(2.5deg); }
+  44.57% { transform: rotate(0deg); }
+  48.27% { transform: rotate(2.5deg); }
+  53.81% { transform: rotate(0deg); }
+  56.58% { transform: rotate(2.5deg); }
+  60.74% { transform: rotate(0deg); }
+  74.6%  { transform: rotate(2.5deg); }
+  78.29% { transform: rotate(0deg); }
+  81.52% { transform: rotate(2.5deg); }
+  86.14% { transform: rotate(0deg); }
+  88.91% { transform: rotate(2.5deg); }
+  93.07% { transform: rotate(0deg); }
+  100%   { transform: rotate(0deg); }
+}
+@keyframes nt-fluff {
+  0%     { transform: rotate(0deg); }
+  3.46%  { transform: rotate(-1.5deg); }
+  7.62%  { transform: rotate(0deg); }
+  10.39% { transform: rotate(-1.5deg); }
+  15.47% { transform: rotate(0deg); }
+  18.71% { transform: rotate(-1.5deg); }
+  22.4%  { transform: rotate(0deg); }
+  33.95% { transform: rotate(-1.5deg); }
+  38.57% { transform: rotate(0deg); }
+  41.34% { transform: rotate(-1.5deg); }
+  44.57% { transform: rotate(0deg); }
+  48.27% { transform: rotate(-1.5deg); }
+  53.81% { transform: rotate(0deg); }
+  56.58% { transform: rotate(-1.5deg); }
+  60.74% { transform: rotate(0deg); }
+  74.6%  { transform: rotate(-1.5deg); }
+  78.29% { transform: rotate(0deg); }
+  81.52% { transform: rotate(-1.5deg); }
+  86.14% { transform: rotate(0deg); }
+  88.91% { transform: rotate(-1.5deg); }
+  93.07% { transform: rotate(0deg); }
+  100%   { transform: rotate(0deg); }
+}
+.state-notice .ear-left  { animation: nt-ear-left  6s ease-in-out 0.08s forwards; }
+.state-notice .ear-right { animation: nt-ear-right 6s ease-in-out 0.08s forwards; }
+.state-notice .antenna   { animation: nt-antenna   6s ease-in-out 0.08s forwards; }
+.state-notice .fluff     { animation: nt-fluff     6s ease-in-out 0.08s forwards; }
+
+/*
+  手と時計：口が開くたびに、少し遅れて（0.1秒）ほんの少し持ち上がる（0.5% ＝ 300px表示で約1.5px）
+  時計を見せながら話しているように見える
+*/
+@keyframes nt-hands {
+  0%     { transform: translateY(0); }
+  3.46%  { transform: translateY(-0.5%); }
+  7.62%  { transform: translateY(0); }
+  10.39% { transform: translateY(-0.5%); }
+  15.47% { transform: translateY(0); }
+  18.71% { transform: translateY(-0.5%); }
+  22.4%  { transform: translateY(0); }
+  33.95% { transform: translateY(-0.5%); }
+  38.57% { transform: translateY(0); }
+  41.34% { transform: translateY(-0.5%); }
+  44.57% { transform: translateY(0); }
+  48.27% { transform: translateY(-0.5%); }
+  53.81% { transform: translateY(0); }
+  56.58% { transform: translateY(-0.5%); }
+  60.74% { transform: translateY(0); }
+  74.6%  { transform: translateY(-0.5%); }
+  78.29% { transform: translateY(0); }
+  81.52% { transform: translateY(-0.5%); }
+  86.14% { transform: translateY(0); }
+  88.91% { transform: translateY(-0.5%); }
+  93.07% { transform: translateY(0); }
+  100%   { transform: translateY(0); }
+}
+.state-notice .hands { animation: nt-hands 6s ease-in-out 0.1s forwards; }
+
+/*
+  「！」の吹き出し：最初に「ぽんっ」とふくらみ、しゃべっている間は出たまま、最後に小さくなりながら消える
+*/
+@keyframes nt-bubble {
+  0%        { opacity: 0; transform: scale(0.6); }
+  4%        { opacity: 1; transform: scale(1.1); }
+  7%        { transform: scale(1); }
+  90%       { opacity: 1; transform: scale(1); }
+  97%, 100% { opacity: 0; transform: scale(0.9); }
+}
+.state-notice .fx-bubble-alert { animation: nt-bubble 6s ease-out forwards; }
+
+
+/* =========================================================
+   ⑦ 寝ているときにクリック（state-wake・2.2秒で1回）：「！」が出て、目をぱちっと開けて起きる
+   ========================================================= */
+/*
+  目：閉じ(0-6) → 半目つぶし(6-9) → 半目(9-12) → 開いた目つぶし(12-15) → 開いた目(15-100)
+  耳・触角・顔などの寝ているときの形は、JS が切り替えのときになめらかに元へ戻す
+*/
+@keyframes wk-closed { 0% { opacity: 1; } 6%  { opacity: 0; } 100% { opacity: 0; } }
+@keyframes wk-hsq    { 0% { opacity: 0; } 6%  { opacity: 1; } 9%  { opacity: 0; } 100% { opacity: 0; } }
+@keyframes wk-half   { 0% { opacity: 0; } 9%  { opacity: 1; } 12% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes wk-sq     { 0% { opacity: 0; } 12% { opacity: 1; } 15% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes wk-normal { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 1; } }
+.state-wake .e-closed { animation: wk-closed 2.2s step-end forwards; }
+.state-wake .e-hsq-l, .state-wake .e-hsq-r { animation: wk-hsq 2.2s step-end forwards; }
+.state-wake .e-half   { animation: wk-half   2.2s step-end forwards; }
+.state-wake .e-sq-l, .state-wake .e-sq-r   { animation: wk-sq 2.2s step-end forwards; }
+.state-wake .e-normal { animation: wk-normal 2.2s step-end forwards; }
+
+/* 口：閉じたまま目を開けて、少しして口も開く */
+@keyframes wk-m-closed { 0% { opacity: 1; } 25% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes wk-m-small  { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 1; } }
+.state-wake .m-closed { animation: wk-m-closed 2.2s step-end forwards; }
+.state-wake .m-small  { animation: wk-m-small  2.2s step-end forwards; }
+
+/* 起きたあと（0.5秒後）に、触角がぴょこっと揺れる */
+@keyframes wk-antenna { 0% { transform: rotate(0deg); } 10% { transform: rotate(-6deg); } 22% { transform: rotate(3deg); } 34%, 100% { transform: rotate(0deg); } }
+.state-wake .antenna { animation: wk-antenna 1.7s ease-in-out 0.5s forwards; }
+
+/* 「！」の吹き出し：「ぽんっ」とふくらんで、少しして消える */
+@keyframes wk-bubble {
+  0%        { opacity: 0; transform: scale(0.6); }
+  8%        { opacity: 1; transform: scale(1.1); }
+  14%       { transform: scale(1); }
+  75%       { opacity: 1; transform: scale(1); }
+  88%, 100% { opacity: 0; transform: scale(0.9); }
+}
+.state-wake .fx-bubble-alert { animation: wk-bubble 2.2s ease-out forwards; }
+
+
+/* =========================================================
+   ⑧ うなずく（state-nod・3秒で1回）：「コクッ、コクッ」と2回うなずく。うなずいている間は寝顔
+   ========================================================= */
+/*
+  頭グループと手・時計：首のあたりを中心に、下げつつ縦に縮める ×2回（1回の下げ・戻しが各約0.38秒）
+  0-50%（1.5秒）でうなずき、残りの1.5秒は止まっている
+*/
+@keyframes nd-head {
+  0%        { transform: translate(0, 0) scaleY(1); }
+  12.5%     { transform: translate(0, 1%) scaleY(0.96); }
+  25%       { transform: translate(0, 0) scaleY(1); }
+  37.5%     { transform: translate(0, 1%) scaleY(0.96); }
+  50%, 100% { transform: translate(0, 0) scaleY(1); }
+}
+.state-nod .head,
+.state-nod .hands { animation: nd-head 3s ease-in-out forwards; }
+
+/*
+  体：足元を中心に縦に少しだけ縮む（96%）
+  体の画像（.base）だけを縮める。キャラクター全体の箱（.sway-wrap）を縮めると、
+  中にある頭や手・時計まで一緒に縮んでしまい、うなずきが2倍の大きさに見えるため
+*/
+@keyframes nd-body {
+  0%        { transform: scaleY(1); }
+  12.5%     { transform: scaleY(0.96); }
+  25%       { transform: scaleY(1); }
+  37.5%     { transform: scaleY(0.96); }
+  50%, 100% { transform: scaleY(1); }
+}
+.state-nod .base {
+  transform-origin: bottom center;
+  animation: nd-body 3s ease-in-out forwards;
+}
+
+/* 顔の中身：さらに1%余分に下がる */
+@keyframes nd-face {
+  0%        { transform: translateY(0); }
+  12.5%     { transform: translateY(1%); }
+  25%       { transform: translateY(0); }
+  37.5%     { transform: translateY(1%); }
+  50%, 100% { transform: translateY(0); }
+}
+.state-nod .face { animation: nd-face 3s ease-in-out forwards; }
+
+/* 耳：頭より約0.1秒遅れて、内側にぱたっと3度揺れる（外側には動かさない） */
+@keyframes nd-ear-left {
+  0%, 5%    { transform: rotate(0deg); }
+  17.5%     { transform: rotate(-3deg); }
+  30%       { transform: rotate(0deg); }
+  42.5%     { transform: rotate(-3deg); }
+  55%, 100% { transform: rotate(0deg); }
+}
+@keyframes nd-ear-right {
+  0%, 5%    { transform: rotate(0deg); }
+  17.5%     { transform: rotate(3deg); }
+  30%       { transform: rotate(0deg); }
+  42.5%     { transform: rotate(3deg); }
+  55%, 100% { transform: rotate(0deg); }
+}
+.state-nod .ear-left  { animation: nd-ear-left  3s ease-in-out forwards; }
+.state-nod .ear-right { animation: nd-ear-right 3s ease-in-out forwards; }
+
+/* 触角とふわふわ：頭より遅れて揺れ、最後に少し反対側へ行き過ぎてから止まる（ふわふわは控えめ） */
+@keyframes nd-antenna {
+  0%, 5%    { transform: rotate(0deg); }
+  17.5%     { transform: rotate(5deg); }
+  30%       { transform: rotate(0deg); }
+  42.5%     { transform: rotate(5deg); }
+  57.5%     { transform: rotate(-2deg); }
+  72.5%, 100% { transform: rotate(0deg); }
+}
+@keyframes nd-fluff {
+  0%, 5%    { transform: rotate(0deg); }
+  17.5%     { transform: rotate(-3deg); }
+  30%       { transform: rotate(0deg); }
+  42.5%     { transform: rotate(-3deg); }
+  57.5%     { transform: rotate(1deg); }
+  72.5%, 100% { transform: rotate(0deg); }
+}
+.state-nod .antenna { animation: nd-antenna 3s ease-in-out forwards; }
+.state-nod .fluff   { animation: nd-fluff   3s ease-in-out forwards; }
+
+/*
+  目：つぶし(0-2) → 半目(2-4) → 半目つぶし(4-5) → 閉じ(5-45) → 半目つぶし(45-46)
+  → 半目(46-48) → つぶし(48-50) → normal(50-100)
+  口：うなずいている間（0-50）は closed、そのあと small
+*/
+@keyframes nd-sq     { 0% { opacity: 1; } 2% { opacity: 0; } 48% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes nd-half   { 0% { opacity: 0; } 2% { opacity: 1; } 4% { opacity: 0; } 46% { opacity: 1; } 48% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes nd-hsq    { 0% { opacity: 0; } 4% { opacity: 1; } 5% { opacity: 0; } 45% { opacity: 1; } 46% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes nd-closed { 0% { opacity: 0; } 5% { opacity: 1; } 45% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes nd-normal { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes nd-m-closed { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 0; } }
+@keyframes nd-m-small  { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 1; } }
+.state-nod .e-sq-l, .state-nod .e-sq-r   { animation: nd-sq  3s step-end forwards; }
+.state-nod .e-half   { animation: nd-half   3s step-end forwards; }
+.state-nod .e-hsq-l, .state-nod .e-hsq-r { animation: nd-hsq 3s step-end forwards; }
+.state-nod .e-closed { animation: nd-closed 3s step-end forwards; }
+.state-nod .e-normal { animation: nd-normal 3s step-end forwards; }
+.state-nod .m-closed { animation: nd-m-closed 3s step-end forwards; }
+.state-nod .m-small  { animation: nd-m-small  3s step-end forwards; }
+

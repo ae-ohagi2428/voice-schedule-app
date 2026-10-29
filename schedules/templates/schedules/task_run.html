@@ -5,66 +5,118 @@
   タスクを進める - ときよみ★
 {% endblock %}
 
+{% block head_extra %}
+<link rel="stylesheet" href="{% static 'schedules/css/character.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="px-[18px] pt-6 pb-8 flex flex-col gap-5">
+<div class="px-[18px] pt-4 pb-8 flex flex-col gap-3">
   <h1 class="page-title text-center">タスクを進める</h1>
   {{ schedules_list|json_script:"schedules-data" }}
   {{ settings_data|json_script:"settings-data" }}
-  <button type="button" id="character" class="mx-auto block">
-    <img src="{% static 'images/character_magic.png' %}" alt="るるると魔法のステッキ"
-      class="w-32 h-auto">
-  </button>
-  <p id="speech-bubble" class="{% if state == 'finished' or state == 'none' %}hidden{% endif %}">
-    るるるをタップしてね。声で予定をおしらせするよ！
-  </p>
-
   <div id="state-running" class="flex flex-col items-center gap-1.5 {% if state != 'running' %}hidden{% endif %}">
-      <span id="running-time" class="text-[11.5px] text-[#8C86A0]">{{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}</span>
-      <span id="running-title" class="text-[20px] font-bold text-[#4E4666]">{{ current_schedule.title }}</span>
-      <div class="flex items-baseline gap-2 mt-1.5">
-        <span class="text-[11px] text-[#8C86A0]">のこり</span>
-        <span id="running-remaining" class="timer-big">
+    <div class="flex items-baseline gap-2 max-w-full">  
+      <span id="running-time" class="text-[11.5px] text-[#8C86A0] flex-none">{{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}</span>
+      <span id="running-title" class="text-[17px] min-w-0 truncate font-bold text-[#4E4666]">{{ current_schedule.title }}</span>
+    </div>
+    <div class="flex items-baseline gap-2 mt-1.5">
+      <span class="text-[11px] text-[#8C86A0]">のこり</span>
+      <span id="running-remaining" class="timer-big">
 
-        </span>
-      </div>
-      <div class="w-[210px] h-1 rounded-full bg-[#EFE9F8] overflow-hidden mt-1">
-        <div id="running-progress" class="h-full w-0 bg-gradient-to-r from-[#9B86C9] to-[#C8A0C2]">
-
-        </div>
+      </span>
+    </div>
+    <div class="w-[210px] h-1.5 rounded-full bg-white overflow-hidden mt-1 border border-[#CFC3E6]">
+      <div id="running-progress" class="h-full w-0 bg-gradient-to-r from-[#9B86C9] to-[#C8A0C2] ">        </div>
       </div>
   </div>
   <div id="state-waiting" class="flex flex-col items-center gap-1.5 {% if state != 'waiting' and state != 'soon' %}hidden{% endif %}">
     <p class="text-[11px] text-[#8C86A0]">つぎの予定</p>
-    <span id="waiting-time" class="text-[11.5px] text-[#8C86A0]">{{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }}</span>
-    <span id="waiting-title" class="text-[20px] font-bold text-[#4E4666]">{{ next_schedule.title }}</span>
+    <div class="flex items-baseline gap-2 max-w-full">
+      <span id="waiting-time" class="text-[11.5px] text-[#8C86A0]  flex-none">{{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }}</span>
+      <span id="waiting-title" class="text-[17px] min-w-0 truncate font-bold text-[#4E4666]">{{ next_schedule.title }}</span>
+    </div>
     {% csrf_token %}
-      <button type="button" id="start-now-btn" class="btn-primary w-full mt-3"
+      <button type="button" id="start-now-btn" class="btn-primary h-11 mt-2 rounded-[15px] w-[calc(50%-4px)]"
         data-start-now-url="{% url 'schedules:start_now' %}">今すぐ始める
       </button>
   </div>
   <div id="state-finished" class="flex flex-col items-center gap-3 {% if state != 'finished' %}hidden{% endif %}">
     <p class="text-[20px] font-bold text-[#4E4666]">今日の予定は全部おわったよ</p>
-    <a href="{% url 'schedules:dashboard' %}" class="btn-secondary w-full">ダッシュボードにもどる</a>
+    <a href="{% url 'schedules:dashboard' %}" class="btn-primary h-11 px-2 text-[12.5px] rounded-[15px] text-center w-[calc(50%-4px)]">ダッシュボードにもどる</a>
   </div>
   <div id="state-none" class="flex flex-col items-center gap-3 {% if state != 'none' %}hidden{% endif %}">
     <p class="text-[20px] font-bold text-[#4E4666]">まだ予定が入ってないよ</p>
-    <a href="{% url 'schedules:dashboard' %}" class="btn-secondary w-full">ダッシュボードにもどる</a>
+    <a href="{% url 'schedules:dashboard' %}" class="btn-primary h-11 px-2 text-[12.5px] rounded-[15px] text-center w-[calc(50%-4px)]">ダッシュボードにもどる</a>
+  </div>
+  <div id="actions-top" class="{% if state != 'finished' and state != 'none' %}hidden{% endif %}">
+    {% include 'schedules/_run_actions.html' %}
+  </div>
+  <div class="flex flex-col items-center gap-2">
+    <p id="watching" class="watching hidden">
+      <span class="watching-dot">
+      </span>
+      みまもり中
+    </p>
+    <div class="w-[320px] aspect-square rounded-[24px] overflow-hidden bg-cover bg-bottom flex items-end justify-center pb-2 relative" style="background-image: url('{% static 'images/character/bg_room.webp' %}')">
+      <div class="absolute top-3 left-3 z-10 max-w-[240px] flex flex-col items-start gap-2">
+        <p id="speech-bubble" class="bubble {% if state == 'finished' or state == 'none' %}hidden{% endif %}">
+          るるるをタップしてね☆
+        </p>
+        <p id="volume-note" class="bubble {% if state == 'finished' or state == 'none' %}hidden{% endif %}">
+          声で予定をおしらせするよ！音量を確認してみてね
+        </p>
+      </div>
+      <div id="character" role="button" tabindex="0" aria-label="るるる。タップすると声で予定をおしらせするよ">
+        <div id="chara" class="chara state-idle">
+          <!-- キャラクター本体（揺れる・呼吸するのはこの箱） -->
+          <div class="sway-wrap">
+            <img src="{% static 'images/character/character_body.webp' %}" class="base" alt="">
+            <div class="head">
+              <img src="{% static 'images/character/character_antenna.webp' %}" class="layer antenna" alt="">
+              <img src="{% static 'images/character/character_ear_left.webp' %}" class="layer ear-left" alt="">
+              <img src="{% static 'images/character/character_ear_right.webp' %}" class="layer ear-right" alt="">
+              <img src="{% static 'images/character/character_fluff.webp' %}" class="layer fluff" alt="">
+              <img src="{% static 'images/character/character_face_base.webp' %}" class="layer" alt="">
+              <div class="face">
+                <img src="{% static 'images/character/cheek.webp' %}" class="layer" alt="">
+                <!-- 目 -->
+                <img src="{% static 'images/character/eye_normal.webp' %}" class="layer e-normal" alt="">
+                <img src="{% static 'images/character/eye_normal.webp' %}" class="layer e-sq-l" alt="">
+                <img src="{% static 'images/character/eye_normal.webp' %}" class="layer e-sq-r" alt="">
+                <img src="{% static 'images/character/eye_half_closing.webp' %}" class="layer e-half" alt="">
+                <img src="{% static 'images/character/eye_half_closing.webp' %}" class="layer e-hsq-l" alt="">
+                <img src="{% static 'images/character/eye_half_closing.webp' %}" class="layer e-hsq-r" alt="">
+                <img src="{% static 'images/character/eye_closed.webp' %}" class="layer e-closed" alt="">
+                <img src="{% static 'images/character/eye_laugh.webp' %}" class="layer e-laugh" alt="">
+                <!-- 口 -->
+                <img src="{% static 'images/character/mouth_small.webp' %}" class="layer m-small" alt="">
+                <img src="{% static 'images/character/mouth_closed.webp' %}" class="layer m-closed" alt="">
+              </div>
+            </div>
+            <img src="{% static 'images/character/character_watch_and_arm.webp' %}" class="layer hands" alt="">
+          </div>
+          <!-- エフェクト（キャラクターと一緒には揺れない） -->
+          <img src="{% static 'images/character/effect_note_left.webp' %}" class="layer fx-note-l" alt="">
+          <img src="{% static 'images/character/effect_note_right.webp' %}" class="layer fx-note-r" alt="">
+          <img src="{% static 'images/character/effect_bubble_heart.webp' %}" class="layer fx-bubble-heart" alt="">
+          <img src="{% static 'images/character/effect_bubble_alert.webp' %}" class="layer fx-bubble-alert" alt="">
+          <div class="fx-z">
+            <img src="{% static 'images/character/effect_z1.webp' %}" class="layer fx-z1" alt="">
+            <img src="{% static 'images/character/effect_z2.webp' %}" class="layer fx-z2" alt="">
+            <img src="{% static 'images/character/effect_z3.webp' %}" class="layer fx-z3" alt="">
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
   {% include 'schedules/_run_timeline.html' %}
-  <div class="flex gap-2">
-    <a href="{% url 'schedules:input' %}?mode=add&from=run" class="flex-1 h-11 rounded-[15px] bg-white border-[1.5px] border-[#B9A6DE] flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-[#5B5373] text-center shadow-[0_4px_12px_rgba(192,112,143,0.18)] active:translate-y-px active:shadow-none">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2.2" stroke-linecap="round">
-        <rect x="9" y="3" width="6" height="11" rx="3"></rect>
-        <path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>
-      </svg>
-      声で予定を追加
-    </a>
-    <a href="{% url 'schedules:edit' %}" class="flex-1 h-11 rounded-[15px] bg-white border-[1.5px] border-[#B9A6DE] flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-[#5B5373] text-center shadow-[0_4px_12px_rgba(192,112,143,0.18)] active:translate-y-px active:shadow-none">
-      予定をなおす
-    </a>
+  <div id="actions-bottom" class="{% if state == 'finished' or state == 'none' %}hidden{% endif %}">
+    {% include 'schedules/_run_actions.html' %}
   </div>
 </div>
 {% endblock %}
 {% block scripts %}
+  <script src="{% static 'schedules/js/character.js' %}"></script>
   <script src="{% static 'schedules/js/task_run.js' %}"></script>
 {% endblock %}

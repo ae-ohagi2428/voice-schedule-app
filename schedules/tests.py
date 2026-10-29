@@ -1448,6 +1448,68 @@ class TaskRunViewTest(TestCase):
         response = self.client.get(self.url)
         self.assertContains(response, f'href="{reverse("schedules:input")}?mode=add&from=run"')
 
+    def test_shows_character_when_no_schedules(self):
+        # 予定が入っていない日でも、キャラクターが表示される
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="chara"')
+        self.assertContains(response, 'schedules/js/character.js')
+        self.assertContains(response, 'schedules/css/character.css')
+
+    def test_watching_hidden_on_load(self):
+        # タスク実行中の場合でも、実行ページを開いた段階では「みまもり中」の表示が隠れている
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='本屋へ行く',
+            start_at=now - timedelta(minutes=10),
+            end_at=now + timedelta(minutes=10),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="watching" class="watching hidden"')
+
+    def test_bubbles_hidden_when_finished(self):
+        # タスクが全て終了している場合、実行ページを開いた段階では
+        # id="speech-bubble"とid="volume-note"の吹き出しが隠れている
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='手紙を発送する',
+            start_at=now - timedelta(minutes=10),
+            end_at=now - timedelta(minutes=5),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="speech-bubble" class="bubble hidden"')
+        self.assertContains(response, 'id="volume-note" class="bubble hidden"')
+
+    def test_timeline_shows_end_time(self):
+        # 予定の一覧に終了時刻が出ている
+        today = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='読書',
+            start_at=today.replace(hour=9),
+            end_at=today.replace(hour=10),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, '～10:00')
+    
+    def test_actions_on_top_when_finished(self):
+        # 一日の予定が全て終了している場合、各種ボタンがキャラクターの上（id="actions-top"）に出ている
+        now = timezone.localtime()
+        self.client.force_login(self.user)
+        ScheduleFactory(
+            user=self.user,
+            title='ゴミ出し',
+            start_at=now - timedelta(minutes=10),
+            end_at=now - timedelta(minutes=5),
+        )
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="actions-top" class=""')
+        self.assertContains(response, 'id="actions-bottom" class="hidden"')
 
 class StartNowViewTest(TestCase):
     def setUp(self):
