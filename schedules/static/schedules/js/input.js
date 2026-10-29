@@ -75,7 +75,6 @@ const errorMessages = {
     'service-not-allowed': '音声入力につながらなかったよ。インターネットにつながっているか確かめるか、ChromeやSafariなどほかのブラウザで開いてみてね',
 };
 
-const charWrapEl = document.getElementById('char-wrap');
 const bubbleEl = document.getElementById('input-bubble');
 
 function showState(name) {
@@ -90,11 +89,9 @@ function showState(name) {
     if (name === 'listening') {
         listeningHintEl.classList.remove('hidden');
         remainingTextEl.classList.add('hidden');
-        charWrapEl.classList.add('is-listening');
     } else {
         remainingTextEl.classList.remove('hidden');
         listeningHintEl.classList.add('hidden');
-        charWrapEl.classList.remove('is-listening');
     }
 }
 

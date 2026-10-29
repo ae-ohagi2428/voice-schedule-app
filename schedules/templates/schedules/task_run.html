@@ -66,46 +66,8 @@
           声で予定をおしらせするよ！音量を確認してみてね
         </p>
       </div>
-      <div id="character" role="button" tabindex="0" aria-label="るるる。タップすると声で予定をおしらせするよ">
-        <div id="chara" class="chara state-idle">
-          <!-- キャラクター本体（揺れる・呼吸するのはこの箱） -->
-          <div class="sway-wrap">
-            <img src="{% static 'images/character/character_body.webp' %}" class="base" alt="">
-            <div class="head">
-              <img src="{% static 'images/character/character_antenna.webp' %}" class="layer antenna" alt="">
-              <img src="{% static 'images/character/character_ear_left.webp' %}" class="layer ear-left" alt="">
-              <img src="{% static 'images/character/character_ear_right.webp' %}" class="layer ear-right" alt="">
-              <img src="{% static 'images/character/character_fluff.webp' %}" class="layer fluff" alt="">
-              <img src="{% static 'images/character/character_face_base.webp' %}" class="layer" alt="">
-              <div class="face">
-                <img src="{% static 'images/character/cheek.webp' %}" class="layer" alt="">
-                <!-- 目 -->
-                <img src="{% static 'images/character/eye_normal.webp' %}" class="layer e-normal" alt="">
-                <img src="{% static 'images/character/eye_normal.webp' %}" class="layer e-sq-l" alt="">
-                <img src="{% static 'images/character/eye_normal.webp' %}" class="layer e-sq-r" alt="">
-                <img src="{% static 'images/character/eye_half_closing.webp' %}" class="layer e-half" alt="">
-                <img src="{% static 'images/character/eye_half_closing.webp' %}" class="layer e-hsq-l" alt="">
-                <img src="{% static 'images/character/eye_half_closing.webp' %}" class="layer e-hsq-r" alt="">
-                <img src="{% static 'images/character/eye_closed.webp' %}" class="layer e-closed" alt="">
-                <img src="{% static 'images/character/eye_laugh.webp' %}" class="layer e-laugh" alt="">
-                <!-- 口 -->
-                <img src="{% static 'images/character/mouth_small.webp' %}" class="layer m-small" alt="">
-                <img src="{% static 'images/character/mouth_closed.webp' %}" class="layer m-closed" alt="">
-              </div>
-            </div>
-            <img src="{% static 'images/character/character_watch_and_arm.webp' %}" class="layer hands" alt="">
-          </div>
-          <!-- エフェクト（キャラクターと一緒には揺れない） -->
-          <img src="{% static 'images/character/effect_note_left.webp' %}" class="layer fx-note-l" alt="">
-          <img src="{% static 'images/character/effect_note_right.webp' %}" class="layer fx-note-r" alt="">
-          <img src="{% static 'images/character/effect_bubble_heart.webp' %}" class="layer fx-bubble-heart" alt="">
-          <img src="{% static 'images/character/effect_bubble_alert.webp' %}" class="layer fx-bubble-alert" alt="">
-          <div class="fx-z">
-            <img src="{% static 'images/character/effect_z1.webp' %}" class="layer fx-z1" alt="">
-            <img src="{% static 'images/character/effect_z2.webp' %}" class="layer fx-z2" alt="">
-            <img src="{% static 'images/character/effect_z3.webp' %}" class="layer fx-z3" alt="">
-          </div>
-        </div>
+      <div id="character" class="cursor-pointer" role="button" tabindex="0" aria-label="るるる。タップすると声で予定をおしらせするよ">
+        {% include 'schedules/_character.html' %}
       </div>
     </div>
 

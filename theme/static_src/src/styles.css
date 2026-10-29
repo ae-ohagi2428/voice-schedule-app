@@ -17,16 +17,6 @@
   50%      { transform: scale(1.06); opacity: 1; }
 }
 
-@keyframes blink {
-  0%, 92%, 100% { opacity: 0; }
-  93%, 98% { opacity: 1; }
-}
-
-@keyframes blink-hide {
-  0%, 92%, 100% { opacity: 1; }
-  93%, 98% { opacity: 0; }
-}
-
 /* ============================================================
    ベース
    ============================================================ */
@@ -641,17 +631,6 @@
     object-position: bottom;
   }
 
-  .is-listening .char-blink {
-    animation: blink 4s infinite;
-  }
-
-  .char-figure.is-listening {
-    animation: none;
-  }
-
-  .is-listening .char-open {
-    animation: blink-hide 4s infinite;
-  }
 
   .bubble {
     background: var(--color-surface, #FFFFFF);
@@ -942,4 +921,23 @@
   font-size: 11px;
   color: #8C86A0;
   text-align: center;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+  opacity: 1;
+  transform: none;
+  transition: none;
+  }
 }

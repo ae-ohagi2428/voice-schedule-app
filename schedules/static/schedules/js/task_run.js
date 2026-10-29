@@ -30,7 +30,7 @@ const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 const settings = JSON.parse(document.getElementById('settings-data').textContent);
 
 const BUBBLE_HIDE_AFTER = 10000;
-const ANNOUNCE_GAP_LIMIT = 10000;
+const ANNOUNCE_GAP_LIMIT = 90000;
 
 let voiceEnabled = false;
 let previousStatus = null;
