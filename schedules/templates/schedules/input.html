@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-page-title text-center
+{% block title %}予定を話す - ときよみ★{% endblock %}
 
 {% block content %}
 <div id="input-page" data-mode="{{ mode|default:'' }}" data-transcript-url="{% url 'schedules:transcript' %}" data-csrf-token="{{ csrf_token }}">
@@ -46,9 +46,8 @@ page-title text-center
     </div>
 
     <div class="mx-[18px] flex items-end gap-2 mb-2">
-      <div id="char-wrap" class="relative w-[100px] flex-none mb-4 char-figure char-open">
-        <img src="{% static 'images/character_listening.png' %}" alt="るるる" class="w-full h-auto">
-        <img src="{% static 'images/character_blink.png' %}" alt="" aria-hidden="true" class="char-blink absolute inset-0 w-full h-auto opacity-0">
+      <div id="char-wrap" class="relative w-[100px] flex-none mb-4 char-figure">
+        <img src="{% static 'images/character/character_listening.webp' %}" alt="るるる" class="w-full h-auto">
       </div>
       <div class="flex-1 flex flex-col items-start gap-2 mb-2">
         <p id="input-bubble" class="bubble">

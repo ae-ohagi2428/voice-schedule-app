@@ -4,7 +4,6 @@
 .chara {
   position: relative;
   width: 240px;
-  cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
