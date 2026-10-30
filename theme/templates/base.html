@@ -63,7 +63,7 @@ function showToast(message, type= 'info') {
 
   setTimeout(() => {
     box.classList.add('opacity-0');
-    box.addEventListener('transitioned', () => box.remove(), {once: true});
+    box.addEventListener('transitionend', () => box.remove(), {once: true});
   }, 3500);
 }
 

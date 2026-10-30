@@ -16,7 +16,7 @@
   このブラウザでは音声入力が使えないよ。ChromeやSafariなど、音声入力に対応しているブラウザで開いてね
 </p>
 <p id="sound-notice" class="mx-[18px] mt-4 rounded-[16px] px-4 py-3 text-[12.5px] bg-[#F3EEF9] text-[#6B5B93]">
-  音声タスクをお知らせするアプリです。イヤホンをつなげるか、音が出てもよい場所でご使用ください。
+  音声でタスクをお知らせします。イヤホンをつなげるか、音が出てもよい場所でご使用ください。
 </p>
 <div class="hidden lg:flex mx-[18px] mt-4 bg-white border border-[#ECE9F1] rounded-[16px] px-4 py-3 items-center gap-4">
   <img src="{% static 'images/qr_code.webp' %}" alt="とき★よみのトップページの QR コード" class="w-[120px] h-[120px] flex-none">
@@ -31,11 +31,20 @@
 </div>
 <section class="reveal mx-[18px] mt-10 flex flex-col gap-2.5">
   <h2 class="text-[16px] font-bold text-[#4E4666] text-center mb-1">
-    「ときよみ★」でできること
+    「ときよみ★」とは？
   </h2>
   <p class="text-[12.5px] leading-relaxed text-[#5B5373]">
     「ときよみ★」はタスクに「時間」をつけて、一日の計画から実行までを手伝うアプリです。
   </p>
+  <div class="grid grid-cols-2 gap-2 mt-1 bg-white border border-[#ECE9F1] rounded-[16px] p-2.5">
+    <img src="{% static 'images/dashboard_image.webp' %}" class="w-full rounded-[16px] border border-[#ECE9F1]" alt="アプリのダッシュボード画面">
+    <img src="{% static 'images/task_run_image.webp' %}" class="w-full rounded-[16px] border border-[#ECE9F1]" alt="アプリの実行画面">
+  </div>
+</section>
+<section class="reveal mx-[18px] mt-10 flex flex-col gap-2.5">
+  <h2 class="text-[16px] font-bold text-[#4E4666] text-center mb-1">
+    「ときよみ★」でできること
+  </h2>
   <div class="reveal bg-white border border-[#ECE9F1] rounded-[16px] px-4 py-3 flex items-center gap-3">
     <div class="w-9 h-9 rounded-full bg-[#F3EEF9] flex items-center justify-center flex-none">
       <svg  width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2"

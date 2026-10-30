@@ -41,3 +41,9 @@ class HomeViewTest(TestCase):
         response = self.client.get(self.url)
         self.assertContains(response, f'href="{reverse("schedules:dashboard")}"')
         self.assertNotContains(response, f'href="{reverse("accounts:register")}"')
+
+    def test_shows_screenshots(self):
+        # スクリーンショット2枚が入っている
+        response = self.client.get(self.url)
+        self.assertContains(response, 'dashboard_image.webp')
+        self.assertContains(response, 'task_run_image.webp')
