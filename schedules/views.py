@@ -1,7 +1,7 @@
+import functools
 import json
 from datetime import datetime
 
-import httpx
 import openai
 from django.conf import settings
 from django.contrib import messages
@@ -15,6 +15,9 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
 from django.views.generic import TemplateView
+from google.api_core.exceptions import GoogleAPIError
+from google.cloud import texttospeech
+from google.oauth2 import service_account
 from pydantic import ValidationError
 
 from .ai import ask_ai
@@ -25,6 +28,14 @@ from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
 
 SPEECH_MAX_LENGTH = 500
+SPEECH_STYLE_PROMPT = 'ほんわかした声質。テンションは高くない。声は高い。'
+
+
+@functools.lru_cache(maxsize=1)
+def get_tts_client():
+    info = json.loads(settings.GOOGLE_CREDENTIALS_JSON)
+    credentials = service_account.Credentials.from_service_account_info(info)
+    return texttospeech.TextToSpeechClient(credentials=credentials)
 
 
 def add_gap_minutes(timeline):
@@ -33,6 +44,7 @@ def add_gap_minutes(timeline):
         gap = int(gap_time.total_seconds() / 60)
         if gap > 0:
             schedule.gap_minutes = gap
+
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/dashboard.html'
@@ -123,24 +135,34 @@ class SpeechView(LoginRequiredMixin, View):
         if not text.strip() or len(text) > SPEECH_MAX_LENGTH:
             return JsonResponse({'error': '文が空か、長すぎるよ'}, status=400)
 
-        if not settings.ELEVENLABS_API_KEY:
+        if not settings.GOOGLE_CREDENTIALS_JSON:
             return JsonResponse({'error': 'APIが設定されていないよ'}, status=503)
         try:
-            response = httpx.post(
-                url=f'https://api.elevenlabs.io/v1/text-to-speech/{settings.ELEVENLABS_VOICE_ID}',
-                headers={'xi-api-key': settings.ELEVENLABS_API_KEY},
-                json={
-                    'text': text,
-                    'model_id': settings.ELEVENLABS_MODEL,
-                },
-                timeout=3.0,
+            response = get_tts_client().synthesize_speech(
+                input=texttospeech.SynthesisInput(
+                    text=text,
+                    prompt=SPEECH_STYLE_PROMPT,
+                ),
+                voice=texttospeech.VoiceSelectionParams(
+                    language_code='ja-JP',
+                    name=settings.GOOGLE_TTS_VOICE,
+                    model_name=settings.GOOGLE_TTS_MODEL,
+                ),
+                audio_config=texttospeech.AudioConfig(
+                    audio_encoding=texttospeech.AudioEncoding.MP3,
+                ),
+                timeout=6.0,
             )
-        except httpx.HTTPError:
-            return JsonResponse({'error': 'ElevenLabsとの接続がうまくいかなかったよ'}, status=502)
-        if response.status_code != 200:
-            return JsonResponse({'error': 'ElevenLabsとの接続がうまくいかなかったよ'}, status=502)
+        except GoogleAPIError as error:
+            print('GoogleTTS error:', repr(error))
+            return JsonResponse({'error': 'GoogleTTSとの接続がうまくいかなかったよ'}, status=502)
 
-        return HttpResponse(response.content, content_type='audio/mpeg')
+        return HttpResponse(response.audio_content, content_type='audio/mpeg')
+
+@method_decorator(never_cache, name='dispatch')
+class KeepAliveView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=204)
         
 
 class TranscriptView(LoginRequiredMixin, View):

@@ -26,6 +26,7 @@ const actionsTopEl = document.getElementById('actions-top');
 const actionsBottomEl = document.getElementById('actions-bottom');
 
 const startNowUrl = startNowBtn.dataset.startNowUrl;
+const speechUrl = characterBtn.dataset.speechUrl;
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 const settings = JSON.parse(document.getElementById('settings-data').textContent);
 
@@ -37,6 +38,9 @@ let previousStatus = null;
 let bubbleTimer = null;
 let wakeLock = null;
 let lastCheckedAt = null;
+const audio = new Audio();
+const speechQueue = [];
+let isSpeaking = false;
 
 function getScheduleStatus(schedules, now) {
     const currentSchedule = schedules.find((schedule) =>
@@ -217,6 +221,42 @@ function hideBubbleLater() {
 }
 
 function speak(text) {
+    if (!voiceEnabled) {
+        return;
+    }
+    speechQueue.push(text);
+    if (!isSpeaking) {
+        playNext();
+    }
+}
+
+async function playNext() {
+    if (speechQueue.length === 0) {
+        isSpeaking = false;
+        return;
+    } else {
+        isSpeaking = true;
+        const text = speechQueue.shift();
+        const response = await fetch(speechUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ text: text })
+        });
+        if (!response.ok) {
+            playNext();
+            return;
+        } else {
+            const blob = await response.blob();
+            audio.src = URL.createObjectURL(blob);
+            audio.play();
+        }
+    }
+}
+
+function speakWithBrowser(text) {
     if (!voiceEnabled) {
         return;
     }

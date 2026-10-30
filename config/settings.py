@@ -14,9 +14,9 @@ load_dotenv(BASE_DIR / '.env')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = 'RENDER' not in os.environ
-ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY', '')
-ELEVENLABS_VOICE_ID = os.getenv('ELEVENLABS_VOICE_ID', 'hMK7c1GPJmptCzI4bQIu')
-ELEVENLABS_MODEL = os.getenv('ELEVENLABS_MODEL', 'eleven_flash_v2_5')
+GOOGLE_CREDENTIALS_JSON = os.getenv('GOOGLE_CREDENTIALS_JSON', '')
+GOOGLE_TTS_VOICE = os.getenv('GOOGLE_TTS_VOICE', 'Leda')
+GOOGLE_TTS_MODEL = os.getenv('GOOGLE_TTS_MODEL', 'gemini-3.1-flash-tts-preview')
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
 

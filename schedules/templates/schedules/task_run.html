@@ -66,7 +66,8 @@
           声で予定をおしらせするよ！音量を確認してみてね
         </p>
       </div>
-      <div id="character" class="cursor-pointer" role="button" tabindex="0" aria-label="るるる。タップすると声で予定をおしらせするよ">
+      <div id="character" class="cursor-pointer" role="button" tabindex="0" aria-label="るるる。タップすると声で予定をおしらせするよ"
+        data-speech-url="{% url 'schedules:speech' %}" data-keep-alive-url="{% url 'schedules:keep_alive' %}">
         {% include 'schedules/_character.html' %}
       </div>
     </div>
