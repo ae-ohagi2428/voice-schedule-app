@@ -16,11 +16,11 @@
   {{ settings_data|json_script:"settings-data" }}
   <div id="state-running" class="flex flex-col items-center gap-1.5 {% if state != 'running' %}hidden{% endif %}">
     <div class="flex items-baseline gap-2 max-w-full">  
-      <span id="running-time" class="text-[11.5px] text-[#8C86A0] flex-none">{{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}</span>
+      <span id="running-time" class="text-[11.5px] text-[#736D87] flex-none">{{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}</span>
       <span id="running-title" class="text-[17px] min-w-0 truncate font-bold text-[#4E4666]">{{ current_schedule.title }}</span>
     </div>
     <div class="flex items-baseline gap-2 mt-1.5">
-      <span class="text-[11px] text-[#8C86A0]">のこり</span>
+      <span class="text-[11px] text-[#736D87]">のこり</span>
       <span id="running-remaining" class="timer-big">
 
       </span>
@@ -30,9 +30,9 @@
       </div>
   </div>
   <div id="state-waiting" class="flex flex-col items-center gap-1.5 {% if state != 'waiting' and state != 'soon' %}hidden{% endif %}">
-    <p class="text-[11px] text-[#8C86A0]">つぎの予定</p>
+    <p class="text-[11px] text-[#736D87]">つぎの予定</p>
     <div class="flex items-baseline gap-2 max-w-full">
-      <span id="waiting-time" class="text-[11.5px] text-[#8C86A0]  flex-none">{{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }}</span>
+      <span id="waiting-time" class="text-[11.5px] text-[#736D87]  flex-none">{{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }}</span>
       <span id="waiting-title" class="text-[17px] min-w-0 truncate font-bold text-[#4E4666]">{{ next_schedule.title }}</span>
     </div>
     {% csrf_token %}

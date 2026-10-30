@@ -4,7 +4,7 @@ function showToast(message, type= 'info') {
 
   const p = document.createElement('p');
   p.className = 'text-center rounded-[16px] px-4 py-3 text-[12.5px] shadow-[0_6px_18px_rgba(91,83,115,0.15)] '
-    + (type === 'error' ? 'bg-[#F3E4EE] text-[#C0708F]' : 'bg-[#EFE9F8] text-[#6B5B93]');
+    + (type === 'error' ? 'bg-[#F3E4EE] text-[#984E6E]' : 'bg-[#EFE9F8] text-[#6B5B93]');
   p.textContent = message;
 
   box.appendChild(p);

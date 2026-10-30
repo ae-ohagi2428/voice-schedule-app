@@ -6,7 +6,7 @@
 {% block content %}
 <div id="input-page" data-mode="{{ mode|default:'' }}" data-transcript-url="{% url 'schedules:transcript' %}" data-csrf-token="{{ csrf_token }}">
   <div class="px-[18px] py-4 flex items-center justify-between">
-    <a href="{{ return_url }}" class="w-[56px] flex-none text-[12.5px] text-[#8C86A0]">
+    <a href="{{ return_url }}" class="w-[56px] flex-none text-[12.5px] text-[#736D87]">
       ‹ もどる
     </a>
     <h1 class="page-title text-center">
@@ -21,10 +21,10 @@
     <span class="w-[56px] flex-none"></span>
   </div>
   <div class="mx-[18px] flex flex-col gap-2 ">
-    <p class="text-[11px] text-[#8C86A0]">
+    <p class="text-[11px] text-[#736D87]">
       こんなふうに話してね
     </p>
-    <p class="text-[11.5px] leading-[1.7] text-[#8C86A0] bg-[#F3EEF9] rounded-[16px] px-[14px] py-[11px] border border-[#ECE9F1]">
+    <p class="text-[11.5px] leading-[1.7] text-[#6B5B93] bg-[#F3EEF9] rounded-[16px] px-[14px] py-[11px] border border-[#ECE9F1]">
       {% if mode == 'add' %}
         15時から買い物を30分
       {% elif mode == 'edit' %}
@@ -39,7 +39,7 @@
       shadow-[0_4px_16px_rgba(91,83,115,.07)] h-[120px] relative overflow-hidden">
       <div id="result-card" class="h-full overflow-y-auto p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <p id="result" class="text-[15px] leading-[1.8] text-[#4E4666]">
-          <span class="text-[#A8A2B8]">ここに話した言葉が出るよ</span>
+          <span class="text-[#736D87]">ここに話した言葉が出るよ</span>
         </p>
       </div>
       <div class="absolute top-0 inset-x-0 h-4 pointer-events-none bg-gradient-to-b from-white to-transparent"></div>
@@ -79,7 +79,7 @@
           <button type="button" id="confirm-btn" class="btn-mic" aria-label="話し終わる">
             <span class="block w-[20px] h-[20px] rounded-[5px] bg-white"></span>
           </button>
-          <button type="button" id="cancel-btn" class="text-[11.5px] text-[#8C86A0] px-3 py-[3px] border border-[#8C86A0] rounded-full">キャンセル</button>
+          <button type="button" id="cancel-btn" class="text-[11.5px] text-[#736D87] px-3 py-[3px] border border-[#736D87] rounded-full">キャンセル</button>
         </div>
         <!-- 送信中 -->
         <div id="state-sending" class="flex flex-col items-center gap-1 hidden">

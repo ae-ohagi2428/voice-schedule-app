@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block content %}
-<p id="speech-unsupported" class="hidden mx-[18px] mt-4 rounded-[16px] px-4 py-3 text-[12.5px] bg-[#F3E4EE] text-[#C0708F]">
+<p id="speech-unsupported" class="hidden mx-[18px] mt-4 rounded-[16px] px-4 py-3 text-[12.5px] bg-[#F3E4EE] text-[#984E6E]">
   このブラウザでは音声入力が使えないよ。ChromeやSafariなど、音声入力に対応しているブラウザで開いてね
 </p>
 <p id="sound-notice" class="mx-[18px] mt-4 rounded-[16px] px-4 py-3 text-[12.5px] bg-[#F3EEF9] text-[#6B5B93]">
@@ -24,11 +24,37 @@
     <p class="text-[13.5px] font-bold text-[#4E4666]">
       スマホからがオススメ
     </p>
-    <p class="text-[11.5px] leading-relaxed text-[#8C86A0]">
+    <p class="text-[11.5px] leading-relaxed text-[#736D87]">
       スマートフォンから開けば、どこからでもるるるが見守ってくれます。
     </p>
   </div>
 </div>
+<section  class="reveal mx-[18px] mt-10 flex flex-col gap-2.5">
+  <h2 class="text-[16px] font-bold text-[#4E4666] text-center mb-1">
+    「ときよみ★」を始めよう
+  </h2>
+  <div class="mx-[18px] mb-4 flex flex-col gap-2.5">
+    {% if user.is_authenticated %}
+      <div class="flex justify-center">
+        <a href="{% url 'schedules:dashboard' %}" class="btn-primary w-[calc(50%-4px)] h-12 px-2 rounded-[18px] text-[13.5px]">
+          ダッシュボードへ
+        </a>
+      </div>
+    {% else %}
+      <p class="text-[12.5px] leading-relaxed text-[#5B5373]">
+        以下のボタンから新規登録またはログインを行ってください。
+      </p>
+      <div class="flex gap-2">
+        <a href="{% url 'accounts:register' %}" class="btn-primary flex-1 h-12 px-2 rounded-[18px] text-[13.5px]">
+          新規登録して始める
+        </a>
+        <a href="{% url 'accounts:login' %}" class="btn-secondary flex-1 h-12 px-2">
+          ログイン
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</section>
 <section class="reveal mx-[18px] mt-10 flex flex-col gap-2.5">
   <h2 class="text-[16px] font-bold text-[#4E4666] text-center mb-1">
     「ときよみ★」とは？
@@ -47,7 +73,7 @@
   </h2>
   <div class="reveal bg-white border border-[#ECE9F1] rounded-[16px] px-4 py-3 flex items-center gap-3">
     <div class="w-9 h-9 rounded-full bg-[#F3EEF9] flex items-center justify-center flex-none">
-      <svg  width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2"
+      <svg  width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#715DA8" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="9" y="3" width="6" height="11" rx="3"></rect>
         <path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>
@@ -57,14 +83,14 @@
       <p class="text-[13.5px] font-bold text-[#4E4666]">
         声だけで予定登録
       </p>
-      <p class="text-[11.5px] leading-relaxed text-[#8C86A0]">
+      <p class="text-[11.5px] leading-relaxed text-[#736D87]">
         今日の予定を話すだけで、一日の計画が立てられます。予定を手入力する手間が少なくて済みます。
       </p>
     </div>
   </div>
   <div class="reveal bg-white border border-[#ECE9F1] rounded-[16px] px-4 py-3 flex items-center gap-3">
     <div class="w-9 h-9 rounded-full bg-[#F3EEF9] flex items-center justify-center flex-none">
-      <svg  width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2"
+      <svg  width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#715DA8" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M11 5 6 9H2v6h4l5 4V5z"></path>
         <path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"></path>
@@ -74,14 +100,14 @@
       <p class="text-[13.5px] font-bold text-[#4E4666]">
         声でお知らせ
       </p>
-      <p class="text-[11.5px] leading-relaxed text-[#8C86A0]">	
+      <p class="text-[11.5px] leading-relaxed text-[#736D87]">	
         予定の始まりや終わりを声で知らせてくれます。余計なプッシュ通知などに気を取られません。
       </p>
     </div>
   </div>
   <div class="reveal bg-white border border-[#ECE9F1] rounded-[16px] px-4 py-3 flex items-center gap-3">
     <div class="w-9 h-9 rounded-full bg-[#F3EEF9] flex items-center justify-center flex-none">
-      <svg  width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2"
+      <svg  width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#715DA8" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path>
       </svg>
@@ -90,7 +116,7 @@
       <p class="text-[13.5px] font-bold text-[#4E4666]">
         そばで見守る
       </p>
-      <p class="text-[11.5px] leading-relaxed text-[#8C86A0]">	
+      <p class="text-[11.5px] leading-relaxed text-[#736D87]">	
         キャラクター「るるる」に見守られながら、一緒に予定を進められます。
       </p>
     </div>
@@ -113,31 +139,13 @@
     </div>
   </div>
 </section>
-<div class="mx-[18px] mb-10 flex flex-col gap-2.5">
-  {% if user.is_authenticated %}
-    <div class="flex justify-center">
-      <a href="{% url 'schedules:dashboard' %}" class="btn-primary w-[calc(50%-4px)] h-12 px-2 rounded-[18px] text-[13.5px]">
-        ダッシュボードへ
-      </a>
-    </div>
-  {% else %}
-    <div class="flex gap-2">
-      <a href="{% url 'accounts:register' %}" class="btn-primary flex-1 h-12 px-2 rounded-[18px] text-[13.5px]">
-        新規登録して始める
-      </a>
-      <a href="{% url 'accounts:login' %}" class="btn-secondary flex-1 h-12 px-2">
-        ログイン
-      </a>
-    </div>
-  {% endif %}
-</div>
 <section class="reveal mx-[18px] mb-10 flex flex-col gap-2.5">
   <h2 class="text-[16px] font-bold text-[#4E4666] text-center mb-1">
     お知らせ
   </h2>
   <ul class="bg-white border border-[#ECE9F1] rounded-[16px] px-4 py-1">
     <li class="flex gap-3 py-2.5 border-b border-[#F3EEF9] last:border-b-0">
-      <time datetime="2026-11-01" class="flex-none text-[11.5px] text-[#8C86A0] font-mono"> {# 日付要変更 #}
+      <time datetime="2026-11-01" class="flex-none text-[11.5px] text-[#736D87] font-mono"> {# 日付要変更 #}
         2026.11.XX
       </time>
       <p class="text-[12.5px] text-[#5B5373]">

@@ -6,7 +6,7 @@ recognition.continuous = true;
 
 const resultEl = document.getElementById('result');
 const resultCardEl = document.getElementById('result-card');
-const resultPlaceholder = '<span class="text-[#A8A2B8]">ここに話した言葉が出るよ</span>';
+const resultPlaceholder = '<span class="text-[#736D87]">ここに話した言葉が出るよ</span>';
 
 const pageEl = document.getElementById('input-page');
 const mode = pageEl.dataset.mode;

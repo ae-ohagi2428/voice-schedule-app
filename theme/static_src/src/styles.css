@@ -42,7 +42,7 @@
 }
 
   a {
-    color: var(--color-brand-link, #7E68B4);
+    color: var(--color-brand-link, #715DA8);
     text-decoration: none;
   }
 
@@ -189,22 +189,22 @@
     align-items: center;
     gap: 7px;
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
-    font-size: 10px;
-    color: var(--color-faint, #A8A2B8);
+    font-size: 11px;
+    color: #736D87;
   }
 
   .app-footer-links a {
-    color: var(--color-faint, #A8A2B8);
+    color: #736D87;
   }
 
   .app-footer-links a:hover {
-    color: var(--color-muted, #8C86A0);
+    color: #5B5373;
   }
 
   .app-footer-version {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
-    font-size: 9.5px;
-    color: var(--color-fainter, #BDB8C9);
+    font-size: 11px;
+    color: #736D87;
   }
 
   /* ---------- ボタン ---------- */
@@ -307,7 +307,7 @@
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-weight: 600;
     font-size: 11.5px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
   }
 
   .btn-text-danger {
@@ -328,19 +328,19 @@
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-weight: 600;
     font-size: 11px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
   }
 
   .field-hint {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-size: 10px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
   }
 
   .field-error {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-size: 10.5px;
-    color: var(--color-rose-mark, #C0708F);
+    color: var(--color-rose-mark, #984E6E);
   }
 
   .input {
@@ -357,7 +357,7 @@
   }
 
   .input::placeholder {
-    color: var(--color-faint, #A8A2B8);
+    color: var(--color-faint, #736D87);
   }
 
   .input:focus {
@@ -400,7 +400,7 @@
   .divider-or > span {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-size: 10.5px;
-    color: var(--color-faint, #A8A2B8);
+    color: var(--color-faint, #736D87);
   }
 
   /* ---------- カード・リスト ---------- */
@@ -416,7 +416,7 @@
     font-family: var(--font-maru, "Zen Maru Gothic"), system-ui, sans-serif;
     font-weight: 700;
     font-size: 11px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
     padding-left: 4px;
   }
 
@@ -449,7 +449,7 @@
   .list-row-value {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-size: 12px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
   }
 
   /* トグル（ON） */
@@ -494,14 +494,14 @@
     font-weight: 500;
     font-size: 11.5px;
     font-variant-numeric: tabular-nums;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
     padding-top: 11px;
     flex: none;
   }
 
   .tl-time-now {
     font-weight: 700;
-    color: var(--color-brand-link, #7E68B4);
+    color: var(--color-brand-link, #715DA8);
     padding-top: 13px;
   }
 
@@ -537,7 +537,7 @@
   .tl-item-dur {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-size: 10.5px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
   }
 
   /* 終わったタスク（.tl-row と併記） */
@@ -598,7 +598,7 @@
     font-weight: 600;
     font-size: 11.5px;
     font-variant-numeric: tabular-nums;
-    color: var(--color-brand-link, #7E68B4);
+    color: var(--color-brand-link, #715DA8);
   }
 
   .progress {
@@ -659,7 +659,7 @@
     font-weight: 600;
     font-size: 11px;
     font-variant-numeric: tabular-nums;
-    color: var(--color-brand-link, #7E68B4);
+    color: var(--color-brand-link, #715DA8);
     flex: none;
   }
 
@@ -674,7 +674,7 @@
   .next-bar-dur {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-size: 10.5px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
   }
 
   /* ---------- 実行画面 ---------- */
@@ -695,7 +695,7 @@
     gap: 6px;
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-size: 11px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
   }
 
   .watching-dot {
@@ -722,7 +722,7 @@
     font-weight: 700;
     font-size: 12.5px;
     font-variant-numeric: tabular-nums;
-    color: var(--color-rose-mark, #C0708F);
+    color: var(--color-rose-mark, #984E6E);
   }
 
   /* るるるからの確認シート（まとめてずらす？） */
@@ -747,14 +747,14 @@
   .page-sub {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-size: 11px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
   }
 
   .link-action {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-weight: 600;
     font-size: 11.5px;
-    color: var(--color-brand-link, #7E68B4);
+    color: var(--color-brand-link, #715DA8);
   }
 
   /* ---------- 規約・プライバシー本文 ---------- */
@@ -786,7 +786,7 @@
   .doc-date {
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-size: 10.5px;
-    color: var(--color-faint, #A8A2B8);
+    color: var(--color-faint, #736D87);
   }
 
   /* タブ（利用規約／プライバシー） */
@@ -794,7 +794,7 @@
     font-family: var(--font-kaku, "Zen Kaku Gothic New"), system-ui, sans-serif;
     font-weight: 600;
     font-size: 11.5px;
-    color: var(--color-muted, #8C86A0);
+    color: var(--color-muted, #736D87);
     background: var(--color-surface, #FFFFFF);
     border: 1px solid var(--color-line, #E2DAEE);
     border-radius: 99px;
@@ -863,7 +863,7 @@
 }
 
 .schedule-row[data-new] .summary-time, .schedule-row[data-new] .summary-title {
-  color: #C0708F;
+  color: #984E6E;
 }
 
 .time-line .input::-webkit-datetime-edit {
@@ -893,7 +893,7 @@
 
 .run-row.is-now .run-time {
   font-weight: 700;
-  color: #7E68B4;
+  color: #715DA8;
 }
 
 .run-row.is-now .run-line {
@@ -925,7 +925,7 @@
 
 .gap-label {
   font-size: 11px;
-  color: #8C86A0;
+  color: #736D87;
   text-align: center;
 }
 
