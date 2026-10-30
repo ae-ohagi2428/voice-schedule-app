@@ -11,20 +11,22 @@
   <div class="flex flex-col gap-1 flex-1">
     <div class="flex items-baseline justify-between">
       <h1 class="page-title">きょうの計画</h1>
-      <a href="{% url 'schedules:edit' %}" class="text-[11.5px] font-semibold text-[#7E68B4] mr-2">編集</a>
+      <a href="{% url 'schedules:edit' %}" class="text-[11.5px] font-semibold text-[#7E68B4] mr-2 border border-[#B9A6DE] rounded-full px-3 py-[3px]">
+        編集
+      </a>
     </div>
     <p class="page-sub">{{ today|date:"n月j日（D）" }}{% if timeline %}・{{ timeline|length }}件{% endif %}</p>
   </div>
 </div>
 {% include 'schedules/_timeline.html' %}
-<div class="char-zone mx-3 mt-4 mb-3 h-[380px]">
+<div class="char-zone mx-3 mt-4 mb-3 {% if current_schedule or next_schedule %}h-[420px]{% else %}h-[380px]{% endif %}">
   <div class="next-bar absolute top-[14px] left-[14px] right-[14px] z-10">
     {% if current_schedule %}
       <span class="next-bar-time">いま</span>
       <span class="next-bar-title">
         {{ current_schedule.start_at|time:"G:i" }} ～ {{ current_schedule.end_at|time:"G:i" }}　{{ current_schedule.title }}
       </span>
-      <a href="{% url 'schedules:task_run' %}" class="flex-none text-[11px] font-bold text-white bg-[#6B5B93] rounded-full px-[12px] py-[5px]">
+      <a href="{% url 'schedules:task_run' %}" class="start-ripple w-full text-center text-[12px] font-bold text-white bg-[#6B5B93] rounded-full px-[12px] py-[8px]">
         予定をはじめる
       </a>
     {% elif next_schedule %}
@@ -32,7 +34,7 @@
       <span class="next-bar-title">
         {{ next_schedule.start_at|time:"G:i" }} ～ {{ next_schedule.end_at|time:"G:i" }}　{{ next_schedule.title }}
       </span>
-      <a href="{% url 'schedules:task_run' %}" class="flex-none text-[11px] font-bold text-white bg-[#6B5B93] rounded-full px-[12px] py-[5px]">
+      <a href="{% url 'schedules:task_run' %}" class="start-ripple w-full text-center text-[12px] font-bold text-white bg-[#6B5B93] rounded-full px-[12px] py-[8px]">
         予定をはじめる
       </a>
     {% elif schedules %}
@@ -44,17 +46,21 @@
     {% endif %}
   </div>
   
-  <div class="bubble absolute top-[62px] left-4 z-10 max-w-[190px]">
+  <div class="bubble absolute left-4 z-10 max-w-[240px]
+    {% if current_schedule or next_schedule %}top-[102px]{% else %}top-[62px]{% endif %}">
     {% if state == 'none' %}
+      {{ user.username }}さん、こんにちは！<br>
       ＋ボタンから予定を追加してみよう！
     {% elif state == 'waiting' %}
+      {{ user.username }}さん、おつかれさま☆<br>
       次の予定までまだ時間があるよ！
     {% elif state == 'soon' %}
       次の予定があと少しで始まるよ。「予定をはじめる」を押してね。
     {% elif state == 'running' %}
-      「予定をはじめる」を押してね。一緒に頑張ろう♪
+      {{ user.username }}さん、おつかれさま☆<br>
+      「予定をはじめる」を押してね。
     {% elif state == 'finished' %}
-      一日おつかれさま☆
+      {{ user.username }}さん、一日おつかれさま☆
     {% endif %}
   </div>
 
