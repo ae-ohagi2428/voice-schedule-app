@@ -210,6 +210,9 @@ class ScheduleEditView(LoginRequiredMixin, TemplateView):
             request.session.pop('new_schedules_date', None)
             if request.POST.get('action') == 'add':
                 return redirect(f"{reverse('schedules:input')}?mode=add")
+            if request.POST.get('action') == 'save':
+                messages.success(request, '予定を保存したよ')
+                return redirect('schedules:edit')
             return redirect('schedules:task_run')
         context = self.get_context_data()
         context['formset'] = formset

@@ -570,6 +570,21 @@ class ScheduleEditViewTest(TestCase):
         response = self.client.post(self.url, data)
         self.assertRedirects(response, reverse('schedules:task_run'))
         self.assertEqual(Schedule.objects.filter(user=self.user).count(), 2)
+    
+    def test_post_save_stays_on_edit(self):
+        # 「予定を保存」ボタンで予定が保存される。画面は編集ページにとどまる
+        self.client.force_login(self.user)
+        data = {
+            'form-TOTAL_FORMS': '1',
+            'form-INITIAL_FORMS': '0',
+            'form-0-title': '読書',
+            'form-0-start_time': '16:00',
+            'form-0-end_time': '17:00',
+            'action': 'save',
+        }
+        response = self.client.post(self.url, data)
+        self.assertRedirects(response, reverse('schedules:edit'))
+        self.assertTrue(Schedule.objects.filter(user=self.user, title='読書').exists())
 
     def test_post_overlap_with_deleted_row_is_valid(self):
         # 時間帯が重なっている場合でも、削除された予定の場合はエラーにならず保存される

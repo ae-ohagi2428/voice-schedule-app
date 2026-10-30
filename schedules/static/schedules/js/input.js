@@ -6,7 +6,7 @@ recognition.continuous = true;
 
 const resultEl = document.getElementById('result');
 const resultCardEl = document.getElementById('result-card');
-const resultPlaceholder = '<span class="text-[#A8A2B8]">ここに話した言葉が出るよ</span>';
+const resultPlaceholder = '<span class="text-[#736D87]">ここに話した言葉が出るよ</span>';
 
 const pageEl = document.getElementById('input-page');
 const mode = pageEl.dataset.mode;
@@ -15,6 +15,7 @@ let endedBy = null;
 const remainingEl = document.getElementById('remaining');
 const remainingTextEl = document.getElementById('remaining-text');
 const listeningHintEl = document.getElementById('listening-hint');
+const subBubbleEl = document.getElementById('sub-bubble');
 let remaining = Number(remainingEl.textContent);
 const startBtn = document.getElementById('start-btn');
 updateRemaining(remaining);
@@ -93,6 +94,7 @@ function showState(name) {
         remainingTextEl.classList.remove('hidden');
         listeningHintEl.classList.add('hidden');
     }
+    subBubbleEl.classList.toggle('invisible', name === 'sending');
 }
 
 function updateRemaining(value) {

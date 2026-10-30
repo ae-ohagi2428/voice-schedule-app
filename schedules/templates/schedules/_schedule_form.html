@@ -7,9 +7,9 @@
   <div class="row-card bg-white rounded-[18px] border px-3.5 py-2.5
     {% if form.errors %}border-rose-mark{% else %}border-[#E2DAEE]{% endif %}">
     <button type="button" class="row-summary w-full flex items-center gap-2.5 text-left">
-      <span class="summary-time w-[86px] shrink-0 text-[12px] font-semibold text-[#8C86A0] tabular-nums"></span>
+      <span class="summary-time w-[86px] shrink-0 text-[12px] font-semibold text-[#736D87] tabular-nums"></span>
       <span class="summary-title flex-1 min-w-0 truncate text-[13.5px] font-semibold text-[#5B5373]"></span>
-      <span class="summary-duration shrink-0 text-[11px] text-[#8C86A0]"></span>
+      <span class="summary-duration shrink-0 text-[11px] text-[#736D87]"></span>
       <span class="summary-error text-rose-mark shrink-0 text-[12px] font-bold {% if form.errors %}hidden{% endif %}">！</span>
     </button>
     <div class="row-editor hidden flex flex-col gap-3">
@@ -21,7 +21,7 @@
           </svg>
         </div>
         <button type="button" class="delete-btn shrink-0 flex items-center gap-1 h-7 px-2.5 rounded-full
-          bg-[#D45B6A] text-white text-[11.5px] font-semibold">
+          bg-[#BE4A5A] text-white text-[11.5px] font-semibold">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path>
           </svg>
@@ -29,17 +29,17 @@
         </button>
       </div>
       <div class="flex items-end gap-2 time-line">
-        <div class="flex-1 flex flex-col gap-1">
-          <span class="field-label">はじめ</span>
+        <div class="flex-1 min-w-0 flex flex-col gap-1">
+          <label for="{{ form.start_time.id_for_label }}" class="field-label">はじめ</label>
           {{ form.start_time }}
         </div>
         <span class="text-[14px] font-semibold text-[#B3ADC0] pb-2.5">→</span>
-        <div class="flex-1 flex flex-col gap-1">
-          <span class="field-label">おわり</span>
+        <div class="flex-1 min-w-0 flex flex-col gap-1">
+          <label for="{{ form.end_time.id_for_label }}" class="field-label">おわり</label>
           {{ form.end_time }}
         </div>
       </div>
-      <span class="editor-duration text-center text-[10.5px] font-semibold text-[#8C86A0]"></span>
+      <span class="editor-duration text-center text-[10.5px] font-semibold text-[#736D87]"></span>
       <div class="row-errors flex flex-col gap-1">
         {% for error in form.non_field_errors %}
           <p class="field-error">{{ error }}</p>

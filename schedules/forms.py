@@ -33,7 +33,8 @@ class ScheduleEditForm(forms.ModelForm):
             self.initial['start_time'] = timezone.localtime(self.instance.start_at).time()
             self.initial['end_time'] = timezone.localtime(self.instance.end_at).time()
         for field in self.fields.values():
-                    field.widget.attrs['class'] = 'input'
+            field.widget.attrs['class'] = 'input'
+        self.fields['title'].widget.attrs['aria-label'] = 'タスク名'
 
     def clean(self):
         cleaned_data = super().clean()

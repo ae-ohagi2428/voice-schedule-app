@@ -5,8 +5,12 @@
 
 {% block content %}
 <div class="px-[22px] pt-6 pb-8 flex flex-col gap-5">
-  <h1 class="page-title text-center">計画をなおす</h1>
-
+  <div class="flex items-center justify-between w-full max-w-[350px] mx-auto">
+    <h1 class="page-title">計画をなおす</h1>
+    <button type="submit" form="edit-form" name="action" value="save" class="bg-[#6B5B93] text-white text-[11px] font-semibold rounded-full px-3 py-[6px]">
+      予定を保存
+    </button>
+  </div>
   <form method="post" id="edit-form" class="flex flex-col gap-3 w-full max-w-[350px] mx-auto">
     {% csrf_token %}
     {{ formset.management_form }}
@@ -22,18 +26,18 @@
     {% empty %}
       <p id="empty-message" class="page-sub text-center">今日の予定はまだありません</p>
     {% endfor %}
-    <button type="button" class="add-btn w-full rounded-[18px] border-[1.5px] border-dashed border-[#C3B4E0] p-[13px] text-center text-[12.5px] font-semibold text-[#7E68B4]">
+    <button type="button" class="add-btn w-full rounded-[18px] border-[1.5px] border-dashed border-[#C3B4E0] p-[13px] text-center text-[12.5px] font-semibold text-[#715DA8]">
       ＋ 予定を追加
     </button>
     <div class="flex items-end gap-2.5 mt-2">
       <img src="{% static 'images/character/character_flying.webp' %}" alt="るるる" class="char-figure w-[150px] h-auto">
-      <p class="bubble mb-4">「はじめる」を押していっしょにはじめよう☆</p>
+      <p class="bubble mb-4">「はじめる」を押していっしょに予定をはじめよう☆</p>
     </div>
     <div class="flex flex-col gap-2">
       <div class="flex gap-2">
         <button type="submit" name="action" value="add"
           class="flex-1 h-11 rounded-[15px] bg-white border-[1.5px] border-[#B9A6DE] flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-[#5B5373] text-center shadow-[0_4px_12px_rgba(192,112,143,0.18)] active:translate-y-px active:shadow-none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2.2" stroke-linecap="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#715DA8" stroke-width="2.2" stroke-linecap="round">
               <rect x="9" y="3" width="6" height="11" rx="3"></rect>
               <path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>
           </svg>
@@ -42,7 +46,7 @@
         {% if formset.extra_forms %}
           <a href="{% url 'schedules:input' %}?mode=edit" 
             class="flex-1 h-11 rounded-[15px] bg-white border-[1.5px] border-[#B9A6DE] flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-[#5B5373] text-center shadow-[0_4px_12px_rgba(192,112,143,0.18)] active:translate-y-px active:shadow-none">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7E68B4" stroke-width="2.2" stroke-linecap="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#715DA8" stroke-width="2.2" stroke-linecap="round">
               <rect x="9" y="3" width="6" height="11" rx="3"></rect>
               <path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path>
             </svg>
