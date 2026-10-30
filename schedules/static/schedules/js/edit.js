@@ -298,6 +298,12 @@ function closeRow(row) {
   row.removeAttribute('data-error');
   setErrorMark(row, false);
   collapseRow(row);
+  const startInput = row.querySelector('input[name$="-start_time"]');
+  const endInput = row.querySelector('input[name$="-end_time"]');
+  if (!endInput.defaultValue) {
+    startInput.defaultValue = startInput.value;
+    endInput.defaultValue = endInput.value;
+  }
   return true;
 }
 

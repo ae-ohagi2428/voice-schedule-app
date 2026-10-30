@@ -5,8 +5,12 @@
 
 {% block content %}
 <div class="px-[22px] pt-6 pb-8 flex flex-col gap-5">
-  <h1 class="page-title text-center">計画をなおす</h1>
-
+  <div class="flex items-center justify-between w-full max-w-[350px] mx-auto">
+    <h1 class="page-title">計画をなおす</h1>
+    <button type="submit" form="edit-form" name="action" value="save" class="bg-[#6B5B93] text-white text-[11px] font-semibold rounded-full px-3 py-[6px]">
+      予定を保存
+    </button>
+  </div>
   <form method="post" id="edit-form" class="flex flex-col gap-3 w-full max-w-[350px] mx-auto">
     {% csrf_token %}
     {{ formset.management_form }}
