@@ -15,6 +15,7 @@ let endedBy = null;
 const remainingEl = document.getElementById('remaining');
 const remainingTextEl = document.getElementById('remaining-text');
 const listeningHintEl = document.getElementById('listening-hint');
+const subBubbleEl = document.getElementById('sub-bubble');
 let remaining = Number(remainingEl.textContent);
 const startBtn = document.getElementById('start-btn');
 updateRemaining(remaining);
@@ -93,6 +94,7 @@ function showState(name) {
         remainingTextEl.classList.remove('hidden');
         listeningHintEl.classList.add('hidden');
     }
+    subBubbleEl.classList.toggle('invisible', name === 'sending');
 }
 
 function updateRemaining(value) {

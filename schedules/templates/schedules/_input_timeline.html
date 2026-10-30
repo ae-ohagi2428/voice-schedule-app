@@ -1,11 +1,16 @@
 <div class="mx-[18px] mt-3 bg-white border border-[#ECE9F1] rounded-[20px] px-[14px] pt-[10px] pb-1">
-    <p class="text-[11px] font-semibold text-[#8C86A0] mb-1">いまの計画・{{ schedules|length }}件</p>
-    <div class="flex flex-col">
-      {% for schedule in schedules %}
-        {% include 'schedules/_input_timeline_row.html' %}
-        {% if schedule.gap_minutes %}
-          <p class="pl-[102px] py-1 text-[10.5px] text-[#8C86A0]">あき {{ schedule.gap_minutes }}分</p>
-        {% endif %}
-      {% endfor %}
-    </div>
+  <div class="flex items-center justify-between mb-1">
+    <p class="text-[11px] font-semibold text-[#8C86A0]">いまの計画・{{ schedules|length }}件</p>
+    <a href="{% url 'schedules:edit' %}" class="text-[11px] font-semibold text-[#7E68B4] border border-[#B9A6DE] rounded-full px-3 py-[3px]">
+      編集
+    </a>
+  </div>
+  <div class="flex flex-col">
+    {% for schedule in schedules %}
+      {% include 'schedules/_input_timeline_row.html' %}
+      {% if schedule.gap_minutes %}
+        <p class="pl-[102px] py-1 text-[10.5px] text-[#8C86A0]">あき {{ schedule.gap_minutes }}分</p>
+      {% endif %}
+    {% endfor %}
+  </div>
 </div>
