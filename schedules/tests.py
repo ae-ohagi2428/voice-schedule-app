@@ -2,7 +2,8 @@ import json
 from datetime import datetime, time, timedelta
 from unittest.mock import patch
 
-from django.test import SimpleTestCase, TestCase
+import httpx
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from pydantic import ValidationError
@@ -994,6 +995,62 @@ class TranscriptViewTest(TestCase):
             content_type='application/json',
         )
         self.assertIsNone(mock_ask_ai.call_args.kwargs['current_schedules'])
+
+
+@override_settings(ELEVENLABS_API_KEY='test-key')
+class SpeechViewTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.url = reverse('schedules:speech')
+
+    def post_text(self, text):
+        return self.client.post(
+            self.url,
+            data=json.dumps({'text': text}),
+            content_type='application/json',
+        )
+
+    def test_redirects_when_not_logged_in(self):
+        # ユーザーがログインしていない場合はリダイレクトされる
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 302)
+
+    @patch('schedules.views.httpx.post')
+    def test_empty_text_returns_400(self, mock_post):
+        # 文が空白だけなら400を返し、ElevenLabsには送らない
+        self.client.force_login(self.user)
+        response = self.post_text('   ')
+        self.assertEqual(response.status_code, 400)
+        mock_post.assert_not_called()
+
+    @override_settings(ELEVENLABS_API_KEY='')
+    @patch('schedules.views.httpx.post')
+    def test_no_api_key_returns_503(self, mock_post):
+        # APIキーが設定されていなければ503を返し、ElevenLabsには送らない
+        self.client.force_login(self.user)
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 503)
+        mock_post.assert_not_called()
+
+    @patch('schedules.views.httpx.post')
+    def test_timeout_returns_502(self, mock_post):
+        # ElevenLabsから時間内に返事が来なければ502エラーを返す
+        self.client.force_login(self.user)
+        mock_post.side_effect = httpx.TimeoutException('timeout')
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 502)
+
+    @patch('schedules.views.httpx.post')
+    def test_success_returns_audio(self, mock_post):
+        # ElevenLabsが成功したら、返ってきた音声をaudio/mpeg形式でで返す
+        self.client.force_login(self.user)
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.content = b'fake-mp3'
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'audio/mpeg')
+        self.assertEqual(response.content, b'fake-mp3')
+
 
 class ScheduleClearViewTest(TestCase):
     def setUp(self):

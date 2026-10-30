@@ -1,12 +1,13 @@
 import json
 from datetime import datetime
 
+import httpx
 import openai
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import modelformset_factory
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
@@ -22,6 +23,8 @@ from .forms import BaseScheduleFormSet, ScheduleEditForm
 from .models import Schedule, Setting
 from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
+
+SPEECH_MAX_LENGTH = 500
 
 
 def add_gap_minutes(timeline):
@@ -113,6 +116,32 @@ class ScheduleInputView(LoginRequiredMixin, TemplateView):
         context['mode'] = mode
         return context
 
+class SpeechView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        text = data.get('text', '')
+        if not text.strip() or len(text) > SPEECH_MAX_LENGTH:
+            return JsonResponse({'error': '文が空か、長すぎるよ'}, status=400)
+
+        if not settings.ELEVENLABS_API_KEY:
+            return JsonResponse({'error': 'APIが設定されていないよ'}, status=503)
+        try:
+            response = httpx.post(
+                url=f'https://api.elevenlabs.io/v1/text-to-speech/{settings.ELEVENLABS_VOICE_ID}',
+                headers={'xi-api-key': settings.ELEVENLABS_API_KEY},
+                json={
+                    'text': text,
+                    'model_id': settings.ELEVENLABS_MODEL,
+                },
+                timeout=3.0,
+            )
+        except httpx.HTTPError:
+            return JsonResponse({'error': 'ElevenLabsとの接続がうまくいかなかったよ'}, status=502)
+        if response.status_code != 200:
+            return JsonResponse({'error': 'ElevenLabsとの接続がうまくいかなかったよ'}, status=502)
+
+        return HttpResponse(response.content, content_type='audio/mpeg')
+        
 
 class TranscriptView(LoginRequiredMixin, View):
     def post(self, request):
