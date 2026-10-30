@@ -6,7 +6,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#9B86C9">
-<title>{% block title %}とき★よみ{% endblock %}</title>
+<link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+<link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
+<title>{% block title %}ときよみ★{% endblock %}</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,11 +20,8 @@
 </head>
 
 <body>
-<div class="min-h-[calc(100vh-3rem)] max-w-[430px] mx-auto bg-base
-              rounded-[28px] overflow-hidden
-              shadow-[0_12px_50px_-10px_rgba(91,83,115,0.8)]
-              ring-1 ring-white/60">
-
+<div class="min-h-dvh sm:min-h-[calc(100vh-3rem)] max-w-[430px] mx-auto bg-base sm:rounded-[28px]
+  overflow-hidden sm:shadow-[0_12px_50px_-10px_rgba(91,83,115,0.8)] sm:ring-1 sm:ring-white/60">
   {% block header %}
     {% include "components/header.html" %}
   {% endblock %}
@@ -48,34 +47,8 @@
   {% endblock %}
 
 </div>
-<script>
-function showToast(message, type= 'info') {
-  const box = document.createElement('div');
-  box.className = 'fixed top-4 left-1/2 -translate-x-1/2 w-[calc(100%-44px)] max-w-[240px] z-50 flex flex-col gap-2 transition-opacity duration-500';
 
-  const p = document.createElement('p');
-  p.className = 'text-center rounded-[16px] px-4 py-3 text-[12.5px] shadow-[0_6px_18px_rgba(91,83,115,0.15)] '
-    + (type === 'error' ? 'bg-[#F3E4EE] text-[#C0708F]' : 'bg-[#EFE9F8] text-[#6B5B93]');
-  p.textContent = message;
-
-  box.appendChild(p);
-  document.body.appendChild(box);
-
-  setTimeout(() => {
-    box.classList.add('opacity-0');
-    box.addEventListener('transitionend', () => box.remove(), {once: true});
-  }, 3500);
-}
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[data-auto-dismiss]').forEach((el) => {
-      setTimeout(() => {
-        el.classList.add('opacity-0');
-        el.addEventListener('transitionend', () => el.remove(), { once: true });
-      }, 3500);
-    });
-  });
-</script>
+<script src="{% static 'js/toast.js' %}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

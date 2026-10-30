@@ -131,8 +131,22 @@
     </div>
   {% endif %}
 </div>
+<section class="reveal mx-[18px] mb-10 flex flex-col gap-2.5">
+  <h2 class="text-[16px] font-bold text-[#4E4666] text-center mb-1">
+    お知らせ
+  </h2>
+  <ul class="bg-white border border-[#ECE9F1] rounded-[16px] px-4 py-1">
+    <li class="flex gap-3 py-2.5 border-b border-[#F3EEF9] last:border-b-0">
+      <time datetime="2026-11-01" class="flex-none text-[11.5px] text-[#8C86A0] font-mono"> {# 日付要変更 #}
+        2026.11.XX
+      </time>
+      <p class="text-[12.5px] text-[#5B5373]">
+        アプリを公開しました。
+      </p>
+    </li>
+  </ul>
+</section>
 {% endblock %}
-
 {% block scripts %}
 <script src="{% static 'schedules/js/speech-support.js' %}"></script>
 <script src="{% static 'schedules/js/character.js' %}"></script>
