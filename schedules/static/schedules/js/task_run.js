@@ -27,6 +27,7 @@ const actionsBottomEl = document.getElementById('actions-bottom');
 
 const startNowUrl = startNowBtn.dataset.startNowUrl;
 const speechUrl = characterBtn.dataset.speechUrl;
+const keepAliveUrl = characterBtn.dataset.keepAliveUrl;
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 const settings = JSON.parse(document.getElementById('settings-data').textContent);
 
@@ -37,6 +38,8 @@ const WAITING_DELAY = 300;
 const GREETING_TEXT = '今日のタスクを進めていくよ！一緒に頑張ろう！';
 const BROWSER_SPEECH_LIMIT = 60000;
 const SPEECH_TIMEOUT = 12000;
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+const KEEP_ALIVE_INTERVAL = 600000;
 
 let voiceEnabled = false;
 let previousStatus = null;
@@ -48,6 +51,9 @@ const speechQueue = [];
 let isSpeaking = false;
 let speakingText = '';
 let greetingAudio = null;
+let speechGeneration = 0;
+let waitingTimer = null;
+let audioReady = Promise.resolve();
 
 function getScheduleStatus(schedules, now) {
     const currentSchedule = schedules.find((schedule) =>
@@ -267,19 +273,33 @@ async function playNext() {
         return;
     }
     isSpeaking = true;
+    const generation = speechGeneration;
     const item = speechQueue.shift();
     speakingText = item.text;
-    const waitingTimer = setTimeout(() => {
+    waitingTimer = setTimeout(() => {
         showBubble(WAITING_TEXT);
     }, WAITING_DELAY);
     const blob = await item.audioPromise;
     clearTimeout(waitingTimer);
+    if (generation !== speechGeneration) {
+        return;
+    }
     if (blob === null) {
         speakWithBrowser(item.text);
         return;
     }
+    await audioReady;
+    if (generation !== speechGeneration) {
+        return;
+    }
     audio.src = URL.createObjectURL(blob);
-    audio.play();
+    audio.play().catch(() => {
+        if (generation !== speechGeneration) {
+            return;
+        }
+        URL.revokeObjectURL(audio.src);
+        speakWithBrowser(item.text);
+    });
 }
 
 function speakWithBrowser(text) {
@@ -302,6 +322,28 @@ function speakWithBrowser(text) {
     utterance.onend = finish;
     utterance.onerror = finish;
     speechSynthesis.speak(utterance);
+}
+
+function unlockAudio() {
+    audioReady = new Promise((resolve) => {
+        audio.addEventListener('ended', resolve, { once: true });
+        audio.addEventListener('error', resolve, { once: true });
+        setTimeout(resolve, 500);
+        audio.src = SILENT_WAV;
+        audio.play().catch(resolve);
+    });
+    speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+}
+
+function stopSpeech() {
+    speechGeneration += 1;
+    speechQueue.length = 0;
+    clearTimeout(waitingTimer);
+    audio.pause();
+    speechSynthesis.cancel();
+    isSpeaking = false;
+    toIdle();
+    hideBubble();
 }
 
 async function requestWakeLock() {
@@ -337,6 +379,7 @@ function startVoice() {
         return;
     }
     voiceEnabled = true;
+    unlockAudio();
     requestWakeLock();
     renderStatus(status);
     enqueueSpeech(GREETING_TEXT, greetingAudio || fetchSpeech(GREETING_TEXT));
@@ -397,17 +440,30 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+setInterval(() => {
+    if(!voiceEnabled) {
+        return;
+    }
+    fetch(keepAliveUrl, { cashe: 'no-store' }).catch(() => {});
+}, KEEP_ALIVE_INTERVAL);
+
 startNowBtn.addEventListener('click', startNow);
 
 characterBtn.addEventListener('click', startVoice);
 
 audio.addEventListener('play', () => {
+    if (audio.src === SILENT_WAV) {
+        return;
+    }
     showBubble(speakingText);
     const length = Number.isFinite(audio.duration) ? audio.duration * 1000 : NOTICE_LENGTH;
     startOnce('notice', length);
 });
 
 audio.addEventListener('ended', () => {
+    if (audio.src === SILENT_WAV) {
+        return;
+    }
     URL.revokeObjectURL(audio.src);
     hideBubbleLater();
     playNext();

@@ -26,7 +26,7 @@ from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
 
 SPEECH_MAX_LENGTH = 500
-SPEECH_STYLE = 'マスコットキャラクターのような可愛らしい喋り方だが、抑揚をつけすぎない。語尾を伸ばさず平坦に。ゆっくり話す。語尾（～だよ）は下げる。'
+SPEECH_STYLE = 'マスコットキャラクターのような可愛らしい喋り方だが、抑揚をつけすぎない。語尾を絶対に伸ばさないで短く切る。ゆっくり話す。語尾（～だよ）が上がらないで下げる（～だ↓よ↓）。'
 
 def extract_audio(data):
     audio_blocks = []
