@@ -26,17 +26,34 @@ const actionsTopEl = document.getElementById('actions-top');
 const actionsBottomEl = document.getElementById('actions-bottom');
 
 const startNowUrl = startNowBtn.dataset.startNowUrl;
+const speechUrl = characterBtn.dataset.speechUrl;
+const keepAliveUrl = characterBtn.dataset.keepAliveUrl;
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 const settings = JSON.parse(document.getElementById('settings-data').textContent);
 
 const BUBBLE_HIDE_AFTER = 10000;
 const ANNOUNCE_GAP_LIMIT = 90000;
+const WAITING_TEXT = 'えっと……ちょっとまってね……';
+const WAITING_DELAY = 300;
+const GREETING_TEXT = '今日のタスクを進めていくよ！一緒に頑張ろう！';
+const BROWSER_SPEECH_LIMIT = 60000;
+const SPEECH_TIMEOUT = 12000;
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+const KEEP_ALIVE_INTERVAL = 600000;
 
 let voiceEnabled = false;
 let previousStatus = null;
 let bubbleTimer = null;
 let wakeLock = null;
 let lastCheckedAt = null;
+const audio = new Audio();
+const speechQueue = [];
+let isSpeaking = false;
+let speakingText = '';
+let greetingAudio = null;
+let speechGeneration = 0;
+let waitingTimer = null;
+let audioReady = Promise.resolve();
 
 function getScheduleStatus(schedules, now) {
     const currentSchedule = schedules.find((schedule) =>
@@ -220,16 +237,113 @@ function speak(text) {
     if (!voiceEnabled) {
         return;
     }
-    const utterance = new SpeechSynthesisUtterance(text);
+    enqueueSpeech(text, fetchSpeech(text));
+}
+
+function enqueueSpeech(text, audioPromise) {
+    speechQueue.push({text: text, audioPromise: audioPromise});
+    if (!isSpeaking) {
+        playNext();
+    }
+}
+
+async function fetchSpeech(text) {
+    try {
+        const response = await fetch(speechUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ text: text }),
+            signal: AbortSignal.timeout(SPEECH_TIMEOUT),
+        });
+        if (!response.ok) {
+            return null;
+        }
+        return await response.blob();
+    } catch (error) {
+        return null;
+    }
+}
+
+async function playNext() {
+    if (speechQueue.length === 0) {
+        isSpeaking = false;
+        return;
+    }
+    isSpeaking = true;
+    const generation = speechGeneration;
+    const item = speechQueue.shift();
+    speakingText = item.text;
+    waitingTimer = setTimeout(() => {
+        showBubble(WAITING_TEXT);
+    }, WAITING_DELAY);
+    const blob = await item.audioPromise;
+    clearTimeout(waitingTimer);
+    if (generation !== speechGeneration) {
+        return;
+    }
+    if (blob === null) {
+        speakWithBrowser(item.text);
+        return;
+    }
+    await audioReady;
+    if (generation !== speechGeneration) {
+        return;
+    }
+    audio.src = URL.createObjectURL(blob);
+    audio.play().catch(() => {
+        if (generation !== speechGeneration) {
+            return;
+        }
+        URL.revokeObjectURL(audio.src);
+        speakWithBrowser(item.text);
+    });
+}
+
+function speakWithBrowser(text) {
+    const utterance =new SpeechSynthesisUtterance(text);
     utterance.lang = 'ja-JP';
+    let finished = false;
+    const finish = () => {
+        if (finished) {
+            return;
+        }
+        finished = true;
+        toIdle();
+        hideBubbleLater();
+        playNext();
+    };
     utterance.onstart = () => {
         showBubble(text);
-        startOnce('notice', NOTICE_LENGTH);
+        startOnce('notice', BROWSER_SPEECH_LIMIT);
     };
-    utterance.onend = () => {
-        hideBubbleLater();
-    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
     speechSynthesis.speak(utterance);
+}
+
+function unlockAudio() {
+    audioReady = new Promise((resolve) => {
+        audio.addEventListener('ended', resolve, { once: true });
+        audio.addEventListener('error', resolve, { once: true });
+        setTimeout(resolve, 500);
+        audio.src = SILENT_WAV;
+        audio.play().catch(resolve);
+    });
+    speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+}
+
+function stopSpeech() {
+    speechGeneration += 1;
+    speechQueue.length = 0;
+    clearTimeout(waitingTimer);
+    audio.pause();
+    speechSynthesis.cancel();
+    isSpeaking = false;
+    toIdle();
+    hideBubble();
 }
 
 async function requestWakeLock() {
@@ -265,9 +379,10 @@ function startVoice() {
         return;
     }
     voiceEnabled = true;
+    unlockAudio();
     requestWakeLock();
     renderStatus(status);
-    speak('いっしょにがんばろう');
+    enqueueSpeech(GREETING_TEXT, greetingAudio || fetchSpeech(GREETING_TEXT));
     if (status.state === 'running') {
         speak(`今は${status.currentSchedule.title}の時間だよ。残りあと${status.remainingMinutes}分くらいだよ`);
     } else if (status.state === 'waiting') {
@@ -311,6 +426,10 @@ function announceRemaining(previous, current) {
 
 checkStatus();
 
+if (previousStatus.state === 'running' || previousStatus.state === 'waiting') {
+    greetingAudio = fetchSpeech(GREETING_TEXT);
+}
+
 setInterval(checkStatus, 1000);
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
@@ -321,9 +440,34 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+setInterval(() => {
+    if(!voiceEnabled) {
+        return;
+    }
+    fetch(keepAliveUrl, { cashe: 'no-store' }).catch(() => {});
+}, KEEP_ALIVE_INTERVAL);
+
 startNowBtn.addEventListener('click', startNow);
 
 characterBtn.addEventListener('click', startVoice);
+
+audio.addEventListener('play', () => {
+    if (audio.src === SILENT_WAV) {
+        return;
+    }
+    showBubble(speakingText);
+    const length = Number.isFinite(audio.duration) ? audio.duration * 1000 : NOTICE_LENGTH;
+    startOnce('notice', length);
+});
+
+audio.addEventListener('ended', () => {
+    if (audio.src === SILENT_WAV) {
+        return;
+    }
+    URL.revokeObjectURL(audio.src);
+    hideBubbleLater();
+    playNext();
+});
 
 chara.addEventListener('statechange', (event) => {
     if (!voiceEnabled) {

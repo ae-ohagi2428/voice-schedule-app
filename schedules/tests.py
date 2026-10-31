@@ -1,8 +1,10 @@
+import base64
 import json
 from datetime import datetime, time, timedelta
 from unittest.mock import patch
 
-from django.test import SimpleTestCase, TestCase
+import httpx
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from pydantic import ValidationError
@@ -994,6 +996,99 @@ class TranscriptViewTest(TestCase):
             content_type='application/json',
         )
         self.assertIsNone(mock_ask_ai.call_args.kwargs['current_schedules'])
+
+
+@override_settings(GEMINI_API_KEY='test-key')
+class SpeechViewTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.url = reverse('schedules:speech')
+
+    def post_text(self, text):
+        return self.client.post(
+            self.url,
+            data=json.dumps({'text': text}),
+            content_type='application/json',
+        )
+
+    def make_reply(self, audio_bytes):
+        # Gemini の返事の形（steps → model_output → content → audio）をまねた辞書を作る
+        return {
+            'steps': [{
+                'type': 'model_output',
+                'content': [{
+                    'type': 'audio',
+                    'data': base64.b64encode(audio_bytes).decode(),
+                }],
+            }],
+        }
+
+    def test_redirects_when_not_logged_in(self):
+        # ユーザーがログインしていない場合はリダイレクトされる
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 302)
+
+    @patch('schedules.views.httpx.post')
+    def test_empty_text_returns_400(self, mock_post):
+        # 文が空白だけなら 400 を返し、Gemini には送らない
+        self.client.force_login(self.user)
+        response = self.post_text('   ')
+        self.assertEqual(response.status_code, 400)
+        mock_post.assert_not_called()
+
+    @override_settings(GEMINI_API_KEY='')
+    @patch('schedules.views.httpx.post')
+    def test_no_api_key_returns_503(self, mock_post):
+        # API キーが設定されていなければ 503 を返し、Gemini には送らない
+        self.client.force_login(self.user)
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 503)
+        mock_post.assert_not_called()
+
+    @patch('schedules.views.httpx.post')
+    def test_timeout_returns_502(self, mock_post):
+        # Gemini から時間内に返事が来なければ 502 を返す
+        self.client.force_login(self.user)
+        mock_post.side_effect = httpx.TimeoutException('timeout')
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 502)
+
+    @patch('schedules.views.httpx.post')
+    def test_reply_without_audio_returns_502(self, mock_post):
+        # 返事に音声が入っていなければ 502 を返す
+        self.client.force_login(self.user)
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {'steps': []}
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 502)
+
+    @patch('schedules.views.httpx.post')
+    def test_success_returns_audio(self, mock_post):
+        # Gemini が成功したら、返ってきた音声を audio/wav で返す
+        self.client.force_login(self.user)
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = self.make_reply(b'fake-wav')
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'audio/wav')
+        self.assertEqual(response.content, b'fake-wav')
+
+
+class KeepAliveViewTest(TestCase):
+    def setUp(self):
+        self.user = UserFactory()
+        self.url = reverse('schedules:keep_alive')
+
+    def test_redirects_when_not_logged_in(self):
+        # ユーザーがログインしていない場合はリダイレクトされる
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_returns_204_when_logged_in(self):
+        # ログインしていれば、中身なしのレスポンスコード204を返す
+        self.client.force_login(self.user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 204)
 
 class ScheduleClearViewTest(TestCase):
     def setUp(self):

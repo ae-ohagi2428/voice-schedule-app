@@ -1,12 +1,14 @@
+import base64
 import json
 from datetime import datetime
 
+import httpx
 import openai
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import modelformset_factory
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
@@ -23,6 +25,21 @@ from .models import Schedule, Setting
 from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
 
+SPEECH_MAX_LENGTH = 500
+SPEECH_STYLE = 'マスコットキャラクターのような可愛らしい喋り方だが、抑揚をつけすぎない。語尾を絶対に伸ばさないで短く切る。ゆっくり話す。語尾（～だよ）が上がらないで下げる（～だ↓よ↓）。'
+
+def extract_audio(data):
+    audio_blocks = []
+    for step in data.get('steps', []):
+        if step.get('type') != 'model_output':
+            continue
+        for block in step.get('content', []):
+            if block.get('type') == 'audio':
+                audio_blocks.append(block)
+    if not audio_blocks:
+        return None
+    return base64.b64decode(audio_blocks[-1]['data'])
+
 
 def add_gap_minutes(timeline):
     for schedule, following_schedule in zip(timeline, timeline[1:], strict=False):
@@ -30,6 +47,7 @@ def add_gap_minutes(timeline):
         gap = int(gap_time.total_seconds() / 60)
         if gap > 0:
             schedule.gap_minutes = gap
+
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'schedules/dashboard.html'
@@ -113,6 +131,57 @@ class ScheduleInputView(LoginRequiredMixin, TemplateView):
         context['mode'] = mode
         return context
 
+class SpeechView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        text = data.get('text', '')
+        if not text.strip() or len(text) > SPEECH_MAX_LENGTH:
+            return JsonResponse({'error': '文が空か、長すぎるよ'}, status=400)
+
+        if not settings.GEMINI_API_KEY:
+            return JsonResponse({'error': 'APIが設定されていないよ'}, status=503)
+        try:
+            response = httpx.post(
+                url='https://generativelanguage.googleapis.com/v1beta/interactions',
+                headers={
+                    'x-goog-api-key': settings.GEMINI_API_KEY,
+                },
+                json={
+                    'model': settings.GEMINI_TTS_MODEL,
+                    'input': [{
+                        'type': 'user_input',
+                        'content': [{
+                            'type': 'text',
+                            'text': text,
+                            'annotations': [{
+                                'type': 'speech_metadata',
+                                'style': SPEECH_STYLE,
+                            }],
+                        }],
+                    }],
+                    'response_format': {'type': 'audio'},
+                    'generation_config': {
+                        'speech_config': [{'voice': settings.GEMINI_TTS_VOICE}],
+                    },
+                },
+                timeout=10.0,
+            )
+        except httpx.HTTPError:
+            return JsonResponse({'error': 'GEMINI TTSとの接続がうまくいかなかったよ'}, status=502)
+        if response.status_code != 200:
+            print('GEMINI TTS status:', response.status_code, response.text)
+            return JsonResponse({'error': 'GEMINI TTSとの接続がうまくいかなかったよ'}, status=502)
+        audio = extract_audio(response.json())
+        if audio is None:
+            return JsonResponse({'error': 'GEMINI TTSとの接続がうまくいかなかったよ'}, status=502)
+        return HttpResponse(audio, content_type='audio/wav')
+    
+
+@method_decorator(never_cache, name='dispatch')
+class KeepAliveView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=204)
+        
 
 class TranscriptView(LoginRequiredMixin, View):
     def post(self, request):
