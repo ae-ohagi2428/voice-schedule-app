@@ -28,7 +28,7 @@ from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
 
 SPEECH_MAX_LENGTH = 500
-SPEECH_STYLE_PROMPT = 'ほんわかした声質。テンションは高くない。声は高い。'
+SPEECH_STYLE_PROMPT = '優しくておっとりした声質。声は裏声くらい高い。喋り方は丁寧に。語尾の「よ」の発音は下がる（小さく読む）。文末（語尾）は非常に短く切る。絶対に伸ばして発音しないでください。'
 
 
 @functools.lru_cache(maxsize=1)

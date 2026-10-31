@@ -896,8 +896,8 @@
   93.07% { opacity: 0; }
   100%   { opacity: 0; }
 }
-.state-notice .m-closed { animation: nt-m-closed 6s step-end forwards; }
-.state-notice .m-small  { animation: nt-m-small  6s step-end forwards; }
+.state-notice .m-closed { animation: nt-m-closed 6s step-end infinite; }
+.state-notice .m-small  { animation: nt-m-small  6s step-end infinite; }
 
 /* 顔の中身と頭：口が開いているときだけ、なめらかに少し下がる（あごを動かしてしゃべっているように） */
 @keyframes nt-face {
@@ -948,8 +948,8 @@
   93.07% { transform: translateY(0%); }
   100%   { transform: translateY(0%); }
 }
-.state-notice .face { animation: nt-face 6s ease-in-out forwards; }
-.state-notice .head { animation: nt-head 6s ease-in-out forwards; }
+.state-notice .face { animation: nt-face 6s ease-in-out infinite; }
+.state-notice .head { animation: nt-head 6s ease-in-out infinite; }
 
 /*
   耳・触角・ふわふわ：口が開くたびに、少し遅れて（0.08秒）小さく揺れる
@@ -1084,7 +1084,7 @@
   93.07% { transform: translateY(0); }
   100%   { transform: translateY(0); }
 }
-.state-notice .hands { animation: nt-hands 6s ease-in-out 0.1s forwards; }
+.state-notice .hands { animation: nt-hands 6s ease-in-out 0.1s infinite; }
 
 /*
   「！」の吹き出し：最初に「ぽんっ」とふくらみ、しゃべっている間は出たまま、最後に小さくなりながら消える

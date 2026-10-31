@@ -15,7 +15,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = 'RENDER' not in os.environ
 GOOGLE_CREDENTIALS_JSON = os.getenv('GOOGLE_CREDENTIALS_JSON', '')
-GOOGLE_TTS_VOICE = os.getenv('GOOGLE_TTS_VOICE', 'Leda')
+GOOGLE_TTS_VOICE = os.getenv('GOOGLE_TTS_VOICE', 'Achernar')
 GOOGLE_TTS_MODEL = os.getenv('GOOGLE_TTS_MODEL', 'gemini-3.1-flash-tts-preview')
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')

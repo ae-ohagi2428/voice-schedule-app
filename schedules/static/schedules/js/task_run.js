@@ -32,6 +32,11 @@ const settings = JSON.parse(document.getElementById('settings-data').textContent
 
 const BUBBLE_HIDE_AFTER = 10000;
 const ANNOUNCE_GAP_LIMIT = 90000;
+const WAITING_TEXT = 'えっと……ちょっとまってね……';
+const WAITING_DELAY = 300;
+const GREETING_TEXT = '今日のタスクを進めていくよ！一緒に頑張ろう！';
+const BROWSER_SPEECH_LIMIT = 60000;
+const SPEECH_TIMEOUT = 8000;
 
 let voiceEnabled = false;
 let previousStatus = null;
@@ -41,6 +46,8 @@ let lastCheckedAt = null;
 const audio = new Audio();
 const speechQueue = [];
 let isSpeaking = false;
+let speakingText = '';
+let greetingAudio = null;
 
 function getScheduleStatus(schedules, now) {
     const currentSchedule = schedules.find((schedule) =>
@@ -224,9 +231,33 @@ function speak(text) {
     if (!voiceEnabled) {
         return;
     }
-    speechQueue.push(text);
+    enqueueSpeech(text, fetchSpeech(text));
+}
+
+function enqueueSpeech(text, audioPromise) {
+    speechQueue.push({text: text, audioPromise: audioPromise});
     if (!isSpeaking) {
         playNext();
+    }
+}
+
+async function fetchSpeech(text) {
+    try {
+        const response = await fetch(speechUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ text: text }),
+            signal: AbortSignal.timeout(SPEECH_TIMEOUT),
+        });
+        if (!response.ok) {
+            return null;
+        }
+        return await response.blob();
+    } catch (error) {
+        return null;
     }
 }
 
@@ -234,41 +265,42 @@ async function playNext() {
     if (speechQueue.length === 0) {
         isSpeaking = false;
         return;
-    } else {
-        isSpeaking = true;
-        const text = speechQueue.shift();
-        const response = await fetch(speechUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken,
-        },
-        body: JSON.stringify({ text: text })
-        });
-        if (!response.ok) {
-            playNext();
-            return;
-        } else {
-            const blob = await response.blob();
-            audio.src = URL.createObjectURL(blob);
-            audio.play();
-        }
     }
+    isSpeaking = true;
+    const item = speechQueue.shift();
+    speakingText = item.text;
+    const waitingTimer = setTimeout(() => {
+        showBubble(WAITING_TEXT);
+    }, WAITING_DELAY);
+    const blob = await item.audioPromise;
+    clearTimeout(waitingTimer);
+    if (blob === null) {
+        speakWithBrowser(item.text);
+        return;
+    }
+    audio.src = URL.createObjectURL(blob);
+    audio.play();
 }
 
 function speakWithBrowser(text) {
-    if (!voiceEnabled) {
-        return;
-    }
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance =new SpeechSynthesisUtterance(text);
     utterance.lang = 'ja-JP';
+    let finished = false;
+    const finish = () => {
+        if (finished) {
+            return;
+        }
+        finished = true;
+        toIdle();
+        hideBubbleLater();
+        playNext();
+    };
     utterance.onstart = () => {
         showBubble(text);
-        startOnce('notice', NOTICE_LENGTH);
+        startOnce('notice', BROWSER_SPEECH_LIMIT);
     };
-    utterance.onend = () => {
-        hideBubbleLater();
-    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
     speechSynthesis.speak(utterance);
 }
 
@@ -307,7 +339,7 @@ function startVoice() {
     voiceEnabled = true;
     requestWakeLock();
     renderStatus(status);
-    speak('いっしょにがんばろう');
+    enqueueSpeech(GREETING_TEXT, greetingAudio || fetchSpeech(GREETING_TEXT));
     if (status.state === 'running') {
         speak(`今は${status.currentSchedule.title}の時間だよ。残りあと${status.remainingMinutes}分くらいだよ`);
     } else if (status.state === 'waiting') {
@@ -351,6 +383,10 @@ function announceRemaining(previous, current) {
 
 checkStatus();
 
+if (previousStatus.state === 'running' || previousStatus.state === 'waiting') {
+    greetingAudio = fetchSpeech(GREETING_TEXT);
+}
+
 setInterval(checkStatus, 1000);
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
@@ -364,6 +400,18 @@ document.addEventListener('visibilitychange', () => {
 startNowBtn.addEventListener('click', startNow);
 
 characterBtn.addEventListener('click', startVoice);
+
+audio.addEventListener('play', () => {
+    showBubble(speakingText);
+    const length = Number.isFinite(audio.duration) ? audio.duration * 1000 : NOTICE_LENGTH;
+    startOnce('notice', length);
+});
+
+audio.addEventListener('ended', () => {
+    URL.revokeObjectURL(audio.src);
+    hideBubbleLater();
+    playNext();
+});
 
 chara.addEventListener('statechange', (event) => {
     if (!voiceEnabled) {
