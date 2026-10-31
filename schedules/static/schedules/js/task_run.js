@@ -36,7 +36,7 @@ const WAITING_TEXT = 'えっと……ちょっとまってね……';
 const WAITING_DELAY = 300;
 const GREETING_TEXT = '今日のタスクを進めていくよ！一緒に頑張ろう！';
 const BROWSER_SPEECH_LIMIT = 60000;
-const SPEECH_TIMEOUT = 8000;
+const SPEECH_TIMEOUT = 12000;
 
 let voiceEnabled = false;
 let previousStatus = null;

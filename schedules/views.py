@@ -1,7 +1,8 @@
-import functools
+import base64
 import json
 from datetime import datetime
 
+import httpx
 import openai
 from django.conf import settings
 from django.contrib import messages
@@ -15,9 +16,6 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
 from django.views.generic import TemplateView
-from google.api_core.exceptions import GoogleAPIError
-from google.cloud import texttospeech
-from google.oauth2 import service_account
 from pydantic import ValidationError
 
 from .ai import ask_ai
@@ -28,14 +26,19 @@ from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
 
 SPEECH_MAX_LENGTH = 500
-SPEECH_STYLE_PROMPT = '優しくておっとりした声質。声は裏声くらい高い。喋り方は丁寧に。語尾の「よ」の発音は下がる（小さく読む）。文末（語尾）は非常に短く切る。絶対に伸ばして発音しないでください。'
+SPEECH_STYLE = 'マスコットキャラクターのような可愛らしい喋り方だが、抑揚をつけすぎない。語尾を伸ばさず平坦に。ゆっくり話す。語尾（～だよ）は下げる。'
 
-
-@functools.lru_cache(maxsize=1)
-def get_tts_client():
-    info = json.loads(settings.GOOGLE_CREDENTIALS_JSON)
-    credentials = service_account.Credentials.from_service_account_info(info)
-    return texttospeech.TextToSpeechClient(credentials=credentials)
+def extract_audio(data):
+    audio_blocks = []
+    for step in data.get('steps', []):
+        if step.get('type') != 'model_output':
+            continue
+        for block in step.get('content', []):
+            if block.get('type') == 'audio':
+                audio_blocks.append(block)
+    if not audio_blocks:
+        return None
+    return base64.b64decode(audio_blocks[-1]['data'])
 
 
 def add_gap_minutes(timeline):
@@ -135,29 +138,44 @@ class SpeechView(LoginRequiredMixin, View):
         if not text.strip() or len(text) > SPEECH_MAX_LENGTH:
             return JsonResponse({'error': '文が空か、長すぎるよ'}, status=400)
 
-        if not settings.GOOGLE_CREDENTIALS_JSON:
+        if not settings.GEMINI_API_KEY:
             return JsonResponse({'error': 'APIが設定されていないよ'}, status=503)
         try:
-            response = get_tts_client().synthesize_speech(
-                input=texttospeech.SynthesisInput(
-                    text=text,
-                    prompt=SPEECH_STYLE_PROMPT,
-                ),
-                voice=texttospeech.VoiceSelectionParams(
-                    language_code='ja-JP',
-                    name=settings.GOOGLE_TTS_VOICE,
-                    model_name=settings.GOOGLE_TTS_MODEL,
-                ),
-                audio_config=texttospeech.AudioConfig(
-                    audio_encoding=texttospeech.AudioEncoding.MP3,
-                ),
-                timeout=6.0,
+            response = httpx.post(
+                url='https://generativelanguage.googleapis.com/v1beta/interactions',
+                headers={
+                    'x-goog-api-key': settings.GEMINI_API_KEY,
+                },
+                json={
+                    'model': settings.GEMINI_TTS_MODEL,
+                    'input': [{
+                        'type': 'user_input',
+                        'content': [{
+                            'type': 'text',
+                            'text': text,
+                            'annotations': [{
+                                'type': 'speech_metadata',
+                                'style': SPEECH_STYLE,
+                            }],
+                        }],
+                    }],
+                    'response_format': {'type': 'audio'},
+                    'generation_config': {
+                        'speech_config': [{'voice': settings.GEMINI_TTS_VOICE}],
+                    },
+                },
+                timeout=10.0,
             )
-        except GoogleAPIError as error:
-            print('GoogleTTS error:', repr(error))
-            return JsonResponse({'error': 'GoogleTTSとの接続がうまくいかなかったよ'}, status=502)
-
-        return HttpResponse(response.audio_content, content_type='audio/mpeg')
+        except httpx.HTTPError:
+            return JsonResponse({'error': 'GEMINI TTSとの接続がうまくいかなかったよ'}, status=502)
+        if response.status_code != 200:
+            print('GEMINI TTS status:', response.status_code, response.text)
+            return JsonResponse({'error': 'GEMINI TTSとの接続がうまくいかなかったよ'}, status=502)
+        audio = extract_audio(response.json())
+        if audio is None:
+            return JsonResponse({'error': 'GEMINI TTSとの接続がうまくいかなかったよ'}, status=502)
+        return HttpResponse(audio, content_type='audio/wav')
+    
 
 @method_decorator(never_cache, name='dispatch')
 class KeepAliveView(LoginRequiredMixin, View):
