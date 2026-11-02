@@ -28,6 +28,7 @@ const actionsBottomEl = document.getElementById('actions-bottom');
 const startNowUrl = startNowBtn.dataset.startNowUrl;
 const speechUrl = characterBtn.dataset.speechUrl;
 const keepAliveUrl = characterBtn.dataset.keepAliveUrl;
+const greetingUrl = characterBtn.dataset.greetingUrl;
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 const settings = JSON.parse(document.getElementById('settings-data').textContent);
 
@@ -267,6 +268,20 @@ async function fetchSpeech(text) {
     }
 }
 
+async function fetchGreeting() {
+    try {
+        const response = await fetch(greetingUrl, {
+            signal: AbortSignal.timeout(SPEECH_TIMEOUT),
+        });
+        if (!response.ok) {
+            return null;
+        }
+        return await response.blob();
+    } catch (error) {
+        return null;
+    }
+}
+
 async function playNext() {
     if (speechQueue.length === 0) {
         isSpeaking = false;
@@ -382,7 +397,7 @@ function startVoice() {
     unlockAudio();
     requestWakeLock();
     renderStatus(status);
-    enqueueSpeech(GREETING_TEXT, greetingAudio || fetchSpeech(GREETING_TEXT));
+    enqueueSpeech(GREETING_TEXT, greetingAudio || fetchGreeting());
     if (status.state === 'running') {
         speak(`今は${status.currentSchedule.title}の時間だよ。残りあと${status.remainingMinutes}分くらいだよ`);
     } else if (status.state === 'waiting') {
@@ -427,7 +442,7 @@ function announceRemaining(previous, current) {
 checkStatus();
 
 if (previousStatus.state === 'running' || previousStatus.state === 'waiting') {
-    greetingAudio = fetchSpeech(GREETING_TEXT);
+    greetingAudio = fetchGreeting();
 }
 
 setInterval(checkStatus, 1000);

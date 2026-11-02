@@ -15,7 +15,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = 'RENDER' not in os.environ
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-GEMINI_TTS_VOICE = os.getenv('GEMINI_TTS_VOICE', 'voice_bmj5ker5lmr1')
+GEMINI_TTS_VOICE = os.getenv('GEMINI_TTS_VOICE', 'voice_5nuyvdvh5eli')
 GEMINI_TTS_MODEL = os.getenv('GEMINI_TTS_MODEL', 'gemini-3.8-flash-lite-tts')
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
