@@ -10,7 +10,7 @@
       <span class="summary-time w-[86px] shrink-0 text-[12px] font-semibold text-[#736D87] tabular-nums"></span>
       <span class="summary-title flex-1 min-w-0 truncate text-[13.5px] font-semibold text-[#5B5373]"></span>
       <span class="summary-duration shrink-0 text-[11px] text-[#736D87]"></span>
-      <span class="summary-error text-rose-mark shrink-0 text-[12px] font-bold {% if form.errors %}hidden{% endif %}">！</span>
+      <span class="summary-error text-rose-mark shrink-0 text-[12px] font-bold {% if not form.errors %}hidden{% endif %}">！</span>
     </button>
     <div class="row-editor hidden flex flex-col gap-3">
       <div class="flex items-center gap-3">
