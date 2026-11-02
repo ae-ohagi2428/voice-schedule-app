@@ -26,7 +26,7 @@ from .status import get_schedule_status
 from .usage import add_usage, get_remaining, get_today_usage
 
 SPEECH_MAX_LENGTH = 500
-SPEECH_STYLE = '少しゆっくり喋る。抑揚を抑えめに。語尾を絶対に伸ばさないで短く切る。語尾（～だよ）は絶対に音が上がらず淡々と。語尾以外も発音は伸ばさない（例：「を」は「をぉ～」と発音しない）。「23分」や「45分」の発音は「にじゅうさんぷん」や「よんじゅうごふん」。「にさんじゅっぷん」や「しごじゅっぷん」の発音は誤りなので絶対にしないこと。'
+SPEECH_STYLE = '少しゆっくり喋る。抑揚を抑えめに。語尾を絶対に伸ばさないで短く切る。語尾（～だよ）は絶対に音が上がらず淡々と。語尾以外も発音は伸ばさない（例：「を」は「をぉ～」と発音しない）。「23分」や「45分」の発音は「にじゅうさんぷん」や「よんじゅうごふん」。「にさんじゅっぷん」や「しごじゅっぷん」の発音は誤りなので、絶対にしないこと。'
 
 def extract_audio(data):
     audio_blocks = []
@@ -39,6 +39,35 @@ def extract_audio(data):
     if not audio_blocks:
         return None
     return base64.b64decode(audio_blocks[-1]['data'])
+
+
+def request_speech(text, model):
+    response = httpx.post(
+        url='https://generativelanguage.googleapis.com/v1beta/interactions',
+        headers={
+            'x-goog-api-key': settings.GEMINI_API_KEY,
+        },
+        json={
+            'model': model,
+            'input': [{
+                'type': 'user_input',
+                'content': [{
+                    'type': 'text',
+                    'text': text,
+                    'annotations': [{
+                        'type': 'speech_metadata',
+                        'style': SPEECH_STYLE,
+                    }],
+                }],
+            }],
+            'response_format': {'type': 'audio'},
+            'generation_config': {
+                'speech_config': [{'voice': settings.GEMINI_TTS_VOICE}],
+            },
+        },
+        timeout=10.0,
+    )
+    return response
 
 
 def add_gap_minutes(timeline):
@@ -141,31 +170,10 @@ class SpeechView(LoginRequiredMixin, View):
         if not settings.GEMINI_API_KEY:
             return JsonResponse({'error': 'APIが設定されていないよ'}, status=503)
         try:
-            response = httpx.post(
-                url='https://generativelanguage.googleapis.com/v1beta/interactions',
-                headers={
-                    'x-goog-api-key': settings.GEMINI_API_KEY,
-                },
-                json={
-                    'model': settings.GEMINI_TTS_MODEL,
-                    'input': [{
-                        'type': 'user_input',
-                        'content': [{
-                            'type': 'text',
-                            'text': text,
-                            'annotations': [{
-                                'type': 'speech_metadata',
-                                'style': SPEECH_STYLE,
-                            }],
-                        }],
-                    }],
-                    'response_format': {'type': 'audio'},
-                    'generation_config': {
-                        'speech_config': [{'voice': settings.GEMINI_TTS_VOICE}],
-                    },
-                },
-                timeout=10.0,
-            )
+            response = request_speech(text, settings.GEMINI_TTS_MODEL)
+            if response.status_code == 429:
+                print('GEMINI TTS fallback:', settings.GEMINI_TTS_MODEL)
+                response = request_speech(text, settings.GEMINI_TTS_FALLBACK_MODEL)
         except httpx.HTTPError:
             return JsonResponse({'error': 'GEMINI TTSとの接続がうまくいかなかったよ'}, status=502)
         if response.status_code != 200:
