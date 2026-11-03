@@ -15,8 +15,9 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = 'RENDER' not in os.environ
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-GEMINI_TTS_VOICE = os.getenv('GEMINI_TTS_VOICE', 'voice_bmj5ker5lmr1')
-GEMINI_TTS_MODEL = os.getenv('GEMINI_TTS_MODEL', 'gemini-3.8-flash-lite-tts')
+GEMINI_TTS_VOICE = os.getenv('GEMINI_TTS_VOICE', 'voice_5nuyvdvh5eli')
+GEMINI_TTS_MODEL = os.getenv('GEMINI_TTS_MODEL', 'gemini-3.8-flash-tts')
+GEMINI_TTS_FALLBACK_MODEL = os.getenv('GEMINI_TTS_FALLBACK_MODEL', 'gemini-3.8-flash-lite-tts')
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
 
@@ -134,8 +135,10 @@ STATIC_URL = 'static/'
 if not DEBUG:
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
+    STORAGES = {
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+    }
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

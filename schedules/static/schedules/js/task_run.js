@@ -28,6 +28,7 @@ const actionsBottomEl = document.getElementById('actions-bottom');
 const startNowUrl = startNowBtn.dataset.startNowUrl;
 const speechUrl = characterBtn.dataset.speechUrl;
 const keepAliveUrl = characterBtn.dataset.keepAliveUrl;
+const greetingUrl = characterBtn.dataset.greetingUrl;
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 const settings = JSON.parse(document.getElementById('settings-data').textContent);
 
@@ -48,6 +49,7 @@ let wakeLock = null;
 let lastCheckedAt = null;
 const audio = new Audio();
 const speechQueue = [];
+const prefetchedSpeech = new Map();
 let isSpeaking = false;
 let speakingText = '';
 let greetingAudio = null;
@@ -175,14 +177,20 @@ function checkStatus() {
     const status = getScheduleStatus(schedules, now);
     const isLate = lastCheckedAt !== null && now - lastCheckedAt > ANNOUNCE_GAP_LIMIT;
     if (isLate) {
-        speechSynthesis.cancel();
+        stopSpeech();
     }
     renderStatus(status);
     updateTimeline(status, now);
     scrollTimeline(previousStatus, status);
     if (!isLate) {
-        announceChange(previousStatus, status);
-        announceRemaining(previousStatus, status);
+        const changeText = announceChange(previousStatus, status);
+        if (changeText) {
+            speak(changeText);
+        }
+        const remainingText = announceRemaining(previousStatus, status);
+        if (remainingText) {
+            speak(remainingText);
+        }
     }
     previousStatus = status;
     lastCheckedAt = now;
@@ -233,11 +241,23 @@ function hideBubbleLater() {
     }, BUBBLE_HIDE_AFTER);
 }
 
+function prefetchSpeech(text) {
+    if (!voiceEnabled) {
+        return;
+    }
+    if (prefetchedSpeech.has(text)) {
+        return;
+    }
+    prefetchedSpeech.set(text, fetchSpeech(text));
+}
+
 function speak(text) {
     if (!voiceEnabled) {
         return;
     }
-    enqueueSpeech(text, fetchSpeech(text));
+    const audioPromise = prefetchedSpeech.get(text) || fetchSpeech(text);
+    prefetchedSpeech.delete(text);
+    enqueueSpeech(text, audioPromise);
 }
 
 function enqueueSpeech(text, audioPromise) {
@@ -256,6 +276,20 @@ async function fetchSpeech(text) {
                 'X-CSRFToken': csrfToken,
             },
             body: JSON.stringify({ text: text }),
+            signal: AbortSignal.timeout(SPEECH_TIMEOUT),
+        });
+        if (!response.ok) {
+            return null;
+        }
+        return await response.blob();
+    } catch (error) {
+        return null;
+    }
+}
+
+async function fetchGreeting() {
+    try {
+        const response = await fetch(greetingUrl, {
             signal: AbortSignal.timeout(SPEECH_TIMEOUT),
         });
         if (!response.ok) {
@@ -382,7 +416,7 @@ function startVoice() {
     unlockAudio();
     requestWakeLock();
     renderStatus(status);
-    enqueueSpeech(GREETING_TEXT, greetingAudio || fetchSpeech(GREETING_TEXT));
+    enqueueSpeech(GREETING_TEXT, greetingAudio || fetchGreeting());
     if (status.state === 'running') {
         speak(`今は${status.currentSchedule.title}の時間だよ。残りあと${status.remainingMinutes}分くらいだよ`);
     } else if (status.state === 'waiting') {
@@ -392,42 +426,44 @@ function startVoice() {
 
 function announceChange(previous, current) {
     if (previous == null) {
-        return;
-    } else if (previous.currentSchedule && previous.currentSchedule !== current.currentSchedule ) {
+        return null;
+    } else if (previous.currentSchedule && previous.currentSchedule !== current.currentSchedule) {
         if (current.state === 'running') {
-            speak(`${previous.currentSchedule.title}の終了時間だよ。次は${current.currentSchedule.title}のタスクをはじめるよ！`);
+            return `${previous.currentSchedule.title}の終了時間だよ。次は${current.currentSchedule.title}のタスクをはじめるよ！`;
         } else if (current.state === 'waiting') {
-            speak(`${previous.currentSchedule.title}の終了時間だよ。次は${formatSpokenTime(current.nextSchedule.start_at)}から${current.nextSchedule.title}だよ`);
+            return `${previous.currentSchedule.title}の終了時間だよ。次は${formatSpokenTime(current.nextSchedule.start_at)}から${current.nextSchedule.title}だよ`;
         } else if (current.state === 'finished') {
-            speak(`${previous.currentSchedule.title}の終了時間だよ！今日のタスクはこれでおしまい。おつかれさまでした`);
+            return `${previous.currentSchedule.title}の終了時間だよ！今日のタスクはこれでおしまい。おつかれさまでした`;
         }
-        return;
+        return null;
     } else if (!previous.currentSchedule && current.currentSchedule) {
-        speak(`${current.currentSchedule.title}をはじめるよ`);
+        return `${current.currentSchedule.title}をはじめるよ`;
     }
+    return null;
 }
 
 function announceRemaining(previous, current) {
     if (!settings.time_left_alert) {
-        return;
+        return null;
     } else if (previous == null) {
-        return;
+        return null;
     } else if (current.state !== 'running') {
-        return;
+        return null;
     } else if (previous.currentSchedule !== current.currentSchedule) {
-        return;
+        return null;
     } else if (previous.remainingMinutes === current.remainingMinutes) {
-        return;
+        return null;
     }
     if (current.remainingMinutes % settings.alert_interval === 0) {
-        speak(`${current.currentSchedule.title}の残り時間はあと${current.remainingMinutes}分だよ`);
+        return `${current.currentSchedule.title}の残り時間はあと${current.remainingMinutes}分だよ`;
     }
+    return null;
 }
 
 checkStatus();
 
 if (previousStatus.state === 'running' || previousStatus.state === 'waiting') {
-    greetingAudio = fetchSpeech(GREETING_TEXT);
+    greetingAudio = fetchGreeting();
 }
 
 setInterval(checkStatus, 1000);
@@ -441,10 +477,10 @@ document.addEventListener('visibilitychange', () => {
 });
 
 setInterval(() => {
-    if(!voiceEnabled) {
+    if (!voiceEnabled) {
         return;
     }
-    fetch(keepAliveUrl, { cashe: 'no-store' }).catch(() => {});
+    fetch(keepAliveUrl, { cache: 'no-store' }).catch(() => {});
 }, KEEP_ALIVE_INTERVAL);
 
 startNowBtn.addEventListener('click', startNow);
@@ -474,8 +510,8 @@ chara.addEventListener('statechange', (event) => {
         return;
     }
     if (event.detail.state === 'sleep') {
-        bubbleTimer = showBubble('むにゃむにゃ……');
-        setTimeout(() => {
+        showBubble('むにゃむにゃ……');
+        bubbleTimer = setTimeout(() => {
             showBubble('ぐぅ……ぐぅ……みまもってるよぉ……');
             hideBubbleLater();
         }, 4500);

@@ -1073,6 +1073,31 @@ class SpeechViewTest(TestCase):
         self.assertEqual(response['Content-Type'], 'audio/wav')
         self.assertEqual(response.content, b'fake-wav')
 
+    @override_settings(GEMINI_TTS_MODEL='main-model', GEMINI_TTS_FALLBACK_MODEL='fallback-model')
+    @patch('schedules.views.httpx.post')
+    def test_429_retries_with_fallback_model(self, mock_post):
+        # 1回目が 429 なら、やり直し用のモデルでもう一度送り、音声を返す
+        self.client.force_login(self.user)
+        mock_post.side_effect = [
+            httpx.Response(429),
+            httpx.Response(200, json=self.make_reply(b'fake-wav')),
+        ]
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b'fake-wav')
+        self.assertEqual(mock_post.call_count, 2)
+        self.assertEqual(mock_post.call_args_list[0].kwargs['json']['model'], 'main-model')
+        self.assertEqual(mock_post.call_args_list[1].kwargs['json']['model'], 'fallback-model')
+
+    @patch('schedules.views.httpx.post')
+    def test_other_error_does_not_retry(self, mock_post):
+        # 429 以外の失敗なら、やり直さずに 502 を返す
+        self.client.force_login(self.user)
+        mock_post.return_value = httpx.Response(500)
+        response = self.post_text('いっしょにがんばろう')
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(mock_post.call_count, 1)
+
 
 class KeepAliveViewTest(TestCase):
     def setUp(self):
