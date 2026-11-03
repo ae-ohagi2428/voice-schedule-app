@@ -91,7 +91,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default='postgresql://postgres:password@db:5432/myapp_development',
-            conn_max_age=600
+        conn_max_age=600,
+        conn_health_checks=True,
     )
 }
 
