@@ -39,6 +39,7 @@ const WAITING_DELAY = 300;
 const GREETING_TEXT = '今日のタスクを進めていくよ！一緒に頑張ろう！';
 const BROWSER_SPEECH_LIMIT = 60000;
 const SPEECH_TIMEOUT = 12000;
+const PREFETCH_LEAD = 15000;
 const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
 const KEEP_ALIVE_INTERVAL = 600000;
 
@@ -190,6 +191,16 @@ function checkStatus() {
         const remainingText = announceRemaining(previousStatus, status);
         if (remainingText) {
             speak(remainingText);
+        }
+        const futureTime = new Date(now.getTime() + PREFETCH_LEAD);
+        const futureStatus = getScheduleStatus(schedules, futureTime);
+        const futureChangeText = announceChange(status, futureStatus);
+        const futureRemainingText = announceRemaining(status, futureStatus);
+        if (futureChangeText) {
+            prefetchSpeech(futureChangeText);
+        }
+        if (futureRemainingText) {
+            prefetchSpeech(futureRemainingText);
         }
     }
     previousStatus = status;
