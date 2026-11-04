@@ -997,6 +997,16 @@ class TranscriptViewTest(TestCase):
         )
         self.assertIsNone(mock_ask_ai.call_args.kwargs['current_schedules'])
 
+    @patch('schedules.views.ask_ai')
+    def test_invalid_json_returns_400(self, mock_ask_ai):
+        # 本文が JSON として読めなければ 400 を返し、AI を呼ばず、回数も減らない
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, data='{', content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        mock_ask_ai.assert_not_called()
+        usage = get_today_usage(self.user, timezone.localdate())
+        self.assertEqual(usage.count, 0)
+
 
 @override_settings(GEMINI_API_KEY='test-key')
 class SpeechViewTest(TestCase):
@@ -1097,6 +1107,14 @@ class SpeechViewTest(TestCase):
         response = self.post_text('いっしょにがんばろう')
         self.assertEqual(response.status_code, 502)
         self.assertEqual(mock_post.call_count, 1)
+
+    @patch('schedules.views.httpx.post')
+    def test_invalid_json_returns_400(self, mock_post):
+        # 本文が JSON として読めなければ 400 を返し、Gemini には送らない
+        self.client.force_login(self.user)
+        response = self.client.post(self.url, data='{', content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        mock_post.assert_not_called()
 
 
 class KeepAliveViewTest(TestCase):
@@ -1725,11 +1743,23 @@ class StartNowViewTest(TestCase):
         schedule.refresh_from_db()
         self.assertEqual(schedule.start_at, original_start_at)
         
-
     def test_redirects_when_not_logged_in(self):
         # ユーザーがログインしていない場合はリダイレクトされる
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, 302)
+
+    def test_invalid_json_returns_400(self):
+        # 本文が JSON として読めなければ 400 を返し、予定の開始時刻は変わらない
+        self.client.force_login(self.user)
+        schedule = ScheduleFactory(
+            user=self.user,
+            start_at=self.now + timedelta(minutes=20),
+            end_at=self.now + timedelta(minutes=40),
+        )
+        response = self.client.post(self.url, data='{', content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        schedule.refresh_from_db()
+        self.assertEqual(schedule.start_at, self.now + timedelta(minutes=20))
 
 class ScheduleModelTest(TestCase):
     def setUp(self):
