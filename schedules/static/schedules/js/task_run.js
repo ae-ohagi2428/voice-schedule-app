@@ -498,6 +498,14 @@ startNowBtn.addEventListener('click', startNow);
 
 characterBtn.addEventListener('click', startVoice);
 
+characterBtn.addEventListener ('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+    }
+    event.preventDefault();
+    startVoice();
+});
+
 audio.addEventListener('play', () => {
     if (audio.src === SILENT_WAV) {
         return;

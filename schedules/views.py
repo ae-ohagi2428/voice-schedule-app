@@ -70,6 +70,15 @@ def request_speech(text, model):
     )
     return response
 
+def parse_json(request):
+    try:
+        data = json.loads(request.body)
+    except ValueError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    return data
+        
 
 def add_gap_minutes(timeline):
     for schedule, following_schedule in zip(timeline, timeline[1:], strict=False):
@@ -163,7 +172,9 @@ class ScheduleInputView(LoginRequiredMixin, TemplateView):
 
 class SpeechView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
-        data = json.loads(request.body)
+        data = parse_json(request)
+        if data is None:
+            return JsonResponse({'error': '送られてきた内容が読めなかったよ'}, status=400)
         text = data.get('text', '')
         if not text.strip() or len(text) > SPEECH_MAX_LENGTH:
             return JsonResponse({'error': '文が空か、長すぎるよ'}, status=400)
@@ -194,7 +205,9 @@ class KeepAliveView(LoginRequiredMixin, View):
 
 class TranscriptView(LoginRequiredMixin, View):
     def post(self, request):
-        data = json.loads(request.body)
+        data = parse_json(request)
+        if data is None:
+            return JsonResponse({'error': '送られてきた内容が読めなかったよ'}, status=400)
         text = data.get('text', '')
         mode = data.get('mode')
 
@@ -212,7 +225,7 @@ class TranscriptView(LoginRequiredMixin, View):
                 return JsonResponse({'error': '直せる予定がないよ'}, status=400)
 
         if usage.count >= settings.AI_DAILY_LIMIT:
-            return JsonResponse({'error': '今日は5回使ったよ。また明日話してね。'}, status=429)
+            return JsonResponse({'error': 'きょうの音声入力はおしまいだよ。また明日話してね。'}, status=429)
         
         try:
             result = ask_ai(text, now, current_schedules=current_schedules)
@@ -347,8 +360,10 @@ class TaskRunView(LoginRequiredMixin, TemplateView):
 class StartNowView(LoginRequiredMixin, View):
     def post(self, request):
         today = timezone.localdate()
-        data = json.loads(request.body)
-        schedule_id = data['id']
+        data = parse_json(request)
+        if data is None:
+            return JsonResponse({'error': '送られてきた内容が読めなかったよ'}, status=400)
+        schedule_id = data.get('id')
         schedules = Schedule.objects.filter(
             user=self.request.user, start_at__date=today
         ).order_by('start_at')

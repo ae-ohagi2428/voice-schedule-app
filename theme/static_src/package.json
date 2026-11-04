@@ -15,7 +15,6 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
     "cross-env": "^10.1.0",
-    "daisyui": "^5.7.38",
     "postcss": "^8.5.15",
     "postcss-cli": "^11.0.1",
     "postcss-nested": "^7.0.2",

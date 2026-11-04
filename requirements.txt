@@ -4,8 +4,6 @@ django-tailwind[reload]>=3.8
 dj-database-url>=2.1.0
 whitenoise[brotli]>=6.6.0
 gunicorn>=21.2.0
-uvicorn[standard]>=0.27.0
-psycopg2-binary>=2.9.9
 python-dotenv
 factory-boy>=3.3, <4
 coverage>=7.6,<8

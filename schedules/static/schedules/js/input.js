@@ -140,7 +140,7 @@ async function sendText() {
 
 document.getElementById('start-btn').addEventListener('click', () => {
     if (remaining === 0) {
-        showToast('今日は既に5回使ったよ。また明日話してね。', 'error');
+        showToast('きょうの音声入力はおしまいだよ。また明日話してね。', 'error');
         return;
     }
     endedBy = null;
