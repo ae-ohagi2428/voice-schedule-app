@@ -149,8 +149,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 TAILWIND_APP_NAME = 'theme'
 
-ITERNAL_IPS = [
-    "127.0.0.1",
-]
-
 NPM_BIN_PATH = "/usr/bin/npm"
