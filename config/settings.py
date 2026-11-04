@@ -20,6 +20,7 @@ GEMINI_TTS_MODEL = os.getenv('GEMINI_TTS_MODEL', 'gemini-3.8-flash-tts')
 GEMINI_TTS_FALLBACK_MODEL = os.getenv('GEMINI_TTS_FALLBACK_MODEL', 'gemini-3.8-flash-lite-tts')
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
+GA_MEASUREMENT_ID = os.getenv('GA_MEASUREMENT_ID', '')
 
 AI_DAILY_LIMIT = 5
 
@@ -77,6 +78,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'config.context_processors.analytics',
             ],
         },
     },

@@ -1,7 +1,62 @@
 {% extends 'base.html' %}
 
-{% block title %}利用規約ページ{% endblock %}
+{% block title %}利用規約 - ときよみ★{% endblock %}
 
 {% block content %}
-<h1>利用規約ページ</h1>
+<div class="px-[22px] pt-6 pb-8 flex flex-col gap-5 max-w-[350px] mx-auto">
+  <h1 class="page-title text-center">利用規約（暫定版）</h1>
+  <p class="text-[12.5px] leading-relaxed text-[#5B5373]">本ページは暫定版です。内容は今後見直すことがあります。</p>
+  <p class="text-[12.5px] leading-relaxed text-[#5B5373]">この利用規約（以下「本規約」）は、「ときよみ★」（以下「本アプリ」）を利用するときの条件を定めるものです。本アプリを利用した方は、本規約に同意したものとします。</p>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">1. アカウント</h2>
+    <ul class="list-disc pl-5">
+      <li>登録するときは、正しい情報を入力してください。</li>
+      <li>パスワードは、利用者ご自身で管理してください。</li>
+      <li>ご自身のアカウントを、ほかの人に使わせないでください。</li>
+    </ul>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">2. 本アプリの機能について</h2>
+    <ul class="list-disc pl-5">
+      <li>AI による予定の読み取りは、話した内容と違う結果になることがあります。保存する前に、予定の内容を確かめてください。</li>
+      <li>声のお知らせは、お使いの端末・ブラウザ・通信の状態によって、鳴らなかったり遅れたりすることがあります。お知らせを受けるには、本アプリの画面を開いたままにしておく必要があります。</li>
+      <li>音声入力は、1日に使える回数に上限があります。</li>
+      <li>大切な予定は、本アプリだけに頼らず、ほかの方法でも確かめてください。</li>
+    </ul>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">3. 禁止すること</h2>
+    <ul class="list-disc pl-5">
+      <li>法令や公序良俗に反すること</li>
+      <li>本アプリのサーバーへの不正なアクセスや、大きな負荷をかけること</li>
+      <li>ほかの人になりすますことや、ほかの人の情報を無断で登録すること</li>
+      <li>本アプリの運営を妨げること</li>
+    </ul>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">4. 本アプリの変更・停止</h2>
+    <p>運営者は、予告なく、本アプリの内容を変更したり、提供を停止・終了したりすることがあります。また、そのときに、保存した情報が失われることがあります。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">5. 利用の停止</h2>
+    <p>利用者が本規約に反したときは、運営者は、予告なく、その利用者のアカウントの利用を停止したり、削除したりすることがあります。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">6. 責任について</h2>
+    <p>運営者の故意または重大な過失による場合を除き、本アプリを利用したことによって生じた損害（お知らせの遅れや誤り、保存した情報の消失などを含みます）について、運営者は責任を負いません。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">7. 個人情報の取り扱い</h2>
+    <p>利用者の情報は、<a href="{% url 'home:privacy_policy' %}" class="underline">プライバシーポリシー</a>にしたがって取り扱います。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">8. 本規約の変更</h2>
+    <p>運営者は、必要に応じて本規約を変更することがあります。変更した場合は、このページでお知らせします。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">9. お問い合わせ</h2>
+    <p>本規約についてのお問い合わせは、<a href="https://forms.gle/F2uWFGcMC7ZCKvdM8" class="underline" target="_blank" rel="noopener noreferrer">お問い合わせフォーム</a>からお送りください。</p>
+  </section>
+  <p class="text-[11.5px] text-[#736D87] text-right">2026年11月4日 施行</p>
+</div>
 {% endblock %}

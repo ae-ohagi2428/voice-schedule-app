@@ -64,6 +64,7 @@ def request_speech(text, model):
             'generation_config': {
                 'speech_config': [{'voice': settings.GEMINI_TTS_VOICE}],
             },
+            'store': False,
         },
         timeout=10.0,
     )
