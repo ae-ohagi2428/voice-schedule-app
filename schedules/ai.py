@@ -162,5 +162,6 @@ def ask_ai(text, now=None, current_schedules=None):
         input=user_input,
         text_format=ScheduleList,
         reasoning={'effort': 'low'},
+        store=False,
     )
     return response.output_parsed

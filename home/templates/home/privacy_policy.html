@@ -1,7 +1,67 @@
 {% extends 'base.html' %}
 
-{% block title %}プライバシーポリシーページ{% endblock %}
+{% block title %}プライバシーポリシー - ときよみ★{% endblock %}
 
 {% block content %}
-<h1>プライバシーポリシーページ</h1>
+<div class="px-[22px] pt-6 pb-8 flex flex-col gap-5 max-w-[350px] mx-auto">
+  <h1 class="page-title text-center">プライバシーポリシー（暫定版）</h1>
+  <p class="text-[12.5px] leading-relaxed text-[#5B5373]">本ページは暫定版です。内容は今後見直すことがあります。</p>
+  <p class="text-[12.5px] leading-relaxed text-[#5B5373]">「ときよみ★」（以下「本アプリ」）の運営者（以下「運営者」）は、本アプリの利用者の情報を、以下のとおり取り扱います。</p>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">1. 取得する情報</h2>
+    <ul class="list-disc pl-5">
+      <li>アカウントの情報：ユーザー名、メールアドレス、パスワード（パスワードは元に戻せない形に変換して保存します）</li>
+      <li>予定の情報：タスク名、開始時刻、終了時刻</li>
+      <li>音声入力で話した内容を文字にしたもの</li>
+      <li>設定の情報：残り時間のお知らせの有無と間隔</li>
+      <li>音声入力を使った回数</li>
+      <li>ログインの状態を保つための Cookie</li>
+      <li>アクセスの記録（サーバーが自動で記録する IP アドレスなど）</li>
+      <li>アクセス解析のための情報：見たページ、使っている端末やブラウザの種類など（Google アナリティクスの Cookie を使って集めます）</li>
+    </ul>
+    <p>なお、話した声そのものは、本アプリのサーバーには送られません。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">2. 利用目的</h2>
+    <ul class="list-disc pl-5">
+      <li>予定の作成、表示、声によるお知らせのため</li>
+      <li>ログインと本人確認のため</li>
+      <li>お問い合わせへの対応のため</li>
+      <li>不正な利用の防止と、不具合への対応のため</li>
+      <li>本アプリの利用状況を知り、改善するため</li>
+    </ul>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">3. 外部のサービスへの送信</h2>
+    <p>本アプリは、機能の提供や利用状況の把握のために、次のサービスに情報を送ります。</p>
+    <ul class="list-disc pl-5">
+      <li>OpenAI（アメリカ）：音声入力で話した内容を文字にしたものと、編集中の予定を、予定の形に整えるために送ります。送った内容は、OpenAI のモデルの学習には使われません。また、OpenAI 側に保存しない設定で送っていますが、OpenAI が不正利用の監視のために最大30日間保管することがあります。</li>
+      <li>Google（Gemini API、アメリカ）：声のお知らせの文（タスク名や時刻を含みます）を、声を作るために送ります。送った内容は、Google の製品の改善には使われません。また、Google 側に保存しない設定で送っていますが、Google が不正利用の監視のために一定期間保管することがあります。</li>
+      <li>お使いのブラウザ：音声入力と、声を作れなかったときの代わりの読み上げには、ブラウザの機能を使います。ブラウザによっては、声や文が、ブラウザを提供する会社のサーバーに送られることがあります。その扱いは、各ブラウザの提供会社の方針によります。</li>
+      <li>Google（Google アナリティクス、アメリカ）：本アプリの利用状況を知るために、Cookie を使って、見たページや端末の情報などを集めます。集めた情報には、氏名やメールアドレスなど、個人を特定する情報は含みません。集めた情報は、<a href="https://policies.google.com/technologies/partner-sites" class="underline" target="_blank" rel="noopener noreferrer">Google のポリシー</a>にしたがって扱われます。Google アナリティクスによる情報の収集を止めたい場合は、Google が提供する<a href="https://tools.google.com/dlpage/gaoptout" class="underline" target="_blank" rel="noopener noreferrer">「Google アナリティクス オプトアウト アドオン」</a>を使うか、ブラウザで Cookie を無効にしてください。</li>
+    </ul>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">4. 情報を保管する場所</h2>
+    <p>本アプリは、Render（アプリの実行）と Neon（データベース）のサービスを使っており、情報はアメリカ（オレゴン州）のサーバーに保管されます。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">5. 第三者への提供</h2>
+    <p>法令に基づく場合を除き、3. と 4. に書いたもの以外に、利用者の情報を第三者に提供しません。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">6. 情報の削除</h2>
+    <p>アカウントと保存した情報の削除を希望する場合は、下記の問い合わせ先までご連絡ください。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">7. このポリシーの変更</h2>
+    <p>このポリシーは、必要に応じて変更することがあります。変更した場合は、このページでお知らせします。</p>
+  </section>
+  <section class="flex flex-col gap-2 text-[12.5px] leading-relaxed text-[#5B5373]">
+    <h2 class="text-[14px] font-bold text-[#4E4666]">8. 運営者・問い合わせ先</h2>
+    <p>運営者：おはぎ</p>
+    <a href="https://forms.gle/F2uWFGcMC7ZCKvdM8" class="underline" target="_blank" rel="noopener noreferrer">お問い合わせフォーム</a>
+  </section>
+  <p class="text-[11.5px] text-[#736D87] text-right">2026年11月4日 施行</p>
+</div>
 {% endblock %}

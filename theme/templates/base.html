@@ -17,6 +17,10 @@
 {% tailwind_css %}
 
 {% block head_extra %}{% endblock %}
+{% if ga_measurement_id and not user.is_staff %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_measurement_id }}"></script>
+<script src="{% static 'js/analytics.js' %}" data-ga-id="{{ ga_measurement_id }}"></script>
+{% endif %}
 </head>
 
 <body>
