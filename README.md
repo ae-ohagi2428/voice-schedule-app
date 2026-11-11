@@ -5,9 +5,10 @@ https://voice-schedule-app-web.onrender.com/
 ### 2. アプリ紹介
 キャラクター「るるる」と一緒に効率的にタスクを進められる、時間管理型タスクアプリです。
 **本アプリの特長**
+
 - タスクを音声入力することができます。入力に手間がかかりません。
 - タスク開始・終了時刻を音声でお知らせします。余計なスマホ通知に気を取られません。
-- キャラクターが作業を見守ります。「見守り」は集中力向上効果があると科学的に実証されています。
+- キャラクターが作業を見守ります。「見守り」は集中力向上効果があるとされています。
 
 <p align="center">
   <img src="theme/static/images/dashboard_image.webp" alt="ダッシュボード画面" width="45%">
@@ -69,19 +70,22 @@ https://voice-schedule-app-web.onrender.com/
 | ruff / GitHub Actions | プルリクエストの度に、書き方の自動チェック・自動テストが可能なため |
 
 ### 6. 工夫した点
+
 **キャラクターの動き**
+
 イラストをパーツごとに分けてCSSで動かすことにより、アニメーションとして表示できるようにしました。
 
 **キャラクターの声**
+
 キャラクターの見た目に合う声質になるよう工夫しました。OpenAIのTTS・ElevenLabs・Fish Audio・Google CloudのTTS等を試した上で、Gemini APIの機能で独自の声質を生成し、採用しました。
 
 **音声再生・生成**
+
 Gemini APIは音声生成に数秒かかるため、お知らせ音声が遅延しないように工夫しました。最初の音声としてあらかじめ用意した音声ファイルを再生し、その間に次の音声を生成しています。また、開始時刻・終了時刻のお知らせ音声は、15秒前に生成指示を送り、時刻ちょうどに再生されるようにしています。
 
 ### 7. 今後改善したい内容
 - 設定画面・メールアドレス変更・パスワード変更（本リリースで対応予定）
 - 明日以降の予定・カレンダー機能
-- ゲストログイン機能
 
 ### 8. 補足資料
 - 「ときよみ★」企画書：[planning.md](docs/planning.md)
@@ -91,10 +95,10 @@ Gemini APIは音声生成に数秒かかるため、お知らせ音声が遅延�
 
 - 画面遷移図：下記画像のとおり
 
-<img src="docs/images/screen-transition-diagram.png" alt="ER図" width="60%">
+<img src="docs/images/screen-transition-diagram.png" alt="画面遷移図" width="60%">
 
 ### 9. ローカル環境での起動手順
-```
+```bash
 # リポジトリをクローン
 git clone https://github.com/ae-ohagi2428/voice-schedule-app.git
 cd voice-schedule-app
